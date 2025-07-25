@@ -4,13 +4,16 @@
       <title>Active</title>
       <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@300;400;500;600;700&display=swap">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <link rel="stylesheet" href="styles.css">
+      <link rel="icon" href="/image/home.png">
    </head>
    <body>
-      <nav class="navbar navbar-expand-lg navbar-light bg-light">
-         <a class="navbar-brand" href="#">Active</a>
+      <nav class="navbar navbar-expand-lg navbar-dark">
+         <a class="navbar-brand" href="#">
+           <img src="/image/home.png" alt="Home" style="width: 30px; height: auto;">
+         </a>
          <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
          <span class="navbar-toggler-icon"></span>
          </button>
@@ -24,22 +27,27 @@
                   <a class="nav-link" href="/">Home</a>
                </li>
                <li class="nav-item dropdown">
-                  <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> Features </a>
-                  <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                     <a class="dropdown-item" href="#">Cookies Extractor</a>
-                     <div class="dropdown-divider"></div>
-                     <a class="dropdown-item" href="/step_by_step_guide">Step-by-Step Guide</a>
-                  </div>
+                 <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> Features </a>
+                 <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                   <a class="dropdown-item" href="/step_by_step_guide">Step-by-Step Guide</a>
+                   <div class="dropdown-divider"></div>
+                   <a class="dropdown-item" href="https://zark-auto-share.onrender.com">SpamShare-Tools</a>
+                   <div class="dropdown-divider"></div>
+                   <a class="dropdown-item" href="https://www.facebook.com/61578254222670">Developer</a>
+                 </div>
                </li>
+               <li class="nav-item">
+                 <a class="nav-link" href="tos-privacy-policy">Terms and Conditions</a>
             </ul>
          </div>
       </nav>
       <div class="container">
          <div class="row">
-            <h1 class="col text-start" style="margin-left: 12px; font-size: 20px;">Current Online:</h1>
+            <h1 class="col text-center" style="font-size: 20px; padding: 10px;">Current Online:</h1>
          </div>
          <div class="row" id="user_online"></div>
       </div>
+              <button id="scrollUpBtn"><i class="fa-solid fa-angles-up"></i></button>
       <style>
          .user-card {
          display: flex;
@@ -47,8 +55,8 @@
          margin-bottom: 10px;
          border: 1px solid #dee2e6;
          border-radius: 10px;
-         padding: 5px;
-         width: 100%;
+         padding: 10px;
+         width: 90%;
          text-align: center;
          overflow: auto;
          animation: glow 3s infinite alternate; 
@@ -91,6 +99,19 @@
          }
          p.uptime-user {
          }
+         .navbar {
+  background-color: rgba(26, 26, 26, 0.8);
+  color: #fff;
+  border-radius: 10px;
+}
+
+.navbar a {
+  color: #fff;
+}
+
+.navbar a:hover {
+  color: gray;
+}
       </style>
       <script>
          async function listOfAi() {
@@ -174,5 +195,29 @@
       <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
       <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/howler@2.2.4/dist/howler.min.js"></script>
+<script>
+		let tracks = [
+		                    "https://raw.githubusercontent.com/Kaizenji/Kaizenji/main/aura.mp3",
+		                    "https://raw.githubusercontent.com/Kaizenji/Kaizenji/main/next.mp3",
+		                    "https://raw.githubusercontent.com/Kaizenji/Kaizenji/main/avangard.mp3",
+		                    "https://raw.githubusercontent.com/Kaizenji/Kaizenji/main/life-force.mp3",
+		                     "https://raw.githubusercontent.com/Kaizenji/Kaizenji/main/cute-depressed.mp3"
+		                ];
+		
+		let randomTrack = tracks[Math.floor(Math.random() * tracks.length)];
+		
+		let sound = new Howl({
+		  src: [randomTrack],
+		  autoplay: true,
+		  loop: false,
+		  format: ["mp3"],
+		  volume: 20,
+		  onend: () => {},
+		});
+		
+		sound.play();
+</script>
+  <script src="script.js"></script>
    </body>
-</html>
+	</html>

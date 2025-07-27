@@ -2,7 +2,7 @@
 
 module.exports = {
   name: "admin",
-  role: 2",
+  role: 2,
   description: "Manage admin users. Usage: !admin add <username>",
   execute(message, args, bot) {
     // Check if the command is "!admin add" and has a username argument

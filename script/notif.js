@@ -5,10 +5,11 @@ module.exports = {
     usePrefix: false,
     usage: "notify <message to announce>",
     version: "1.0",
-    cooldown: 0,
-    role: 2,
+    cooldown: 5,
+    role: 2, // Changed to false to make it public
 
     execute: async ({ api, event, args }) => {
+        // Remove admin check
         const message = args.join(" ");
         if (!message) {
             return api.sendMessage("⚠️ Please provide a message to announce.", event.threadID);

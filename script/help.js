@@ -100,14 +100,14 @@ module.exports.run = async function({ api, event, enableCommands, args, Utils, p
       cooldown,
       hasPrefix
     } = command;
-    const roleMessage = role !== undefined ? (role === 0 ? '➬ Permission: user' : (role === 1 ? '➬ Permission: admin' : (role === 2 ? '➬ Permission: thread Admin' : (role === 3 ? '➬ Permission: super Admin' : '')))) : '';
-    const aliasesMessage = aliases.length ? formatFont(`➬ Aliases: ${aliases.join(', ')}\n`) : '';
-    const descriptionMessage = description ? formatFont(`➬ Description: ${description}\n`) : '';
-    const usageMessage = usage ? formatFont(`➬ Usage: ${usage}\n`) : '';
-    const creditsMessage = credits ? formatFont(`➬ Credits: ${credits}\n`) : '';
-    const versionMessage = version ? formatFont(`➬ Version: ${version}\n`) : '';
-    const cooldownMessage = cooldown ? formatFont(`➬ Cooldown: ${cooldown} second(s)\n`) : '';
-    const message = formatFont(`〔 Command 〕\n\n➬ Name: ${name}\n${versionMessage}${roleMessage}\n${aliasesMessage}${descriptionMessage}${usageMessage}${creditsMessage}${cooldownMessage}`);
+    const roleMessage = role !== undefined ? (role === 0 ? '➬ Permission: user' : (role === 1 ? '➥ Permission: admin' : (role === 2 ? '➬ Permission: thread Admin' : (role === 3 ? '➬ Permission: super Admin' : '')))) : '';
+    const aliasesMessage = aliases.length ? formatFont(`➥ Aliases: ${aliases.join(', ')}\n`) : '';
+    const descriptionMessage = description ? formatFont(`➥ Description: ${description}\n`) : '';
+    const usageMessage = usage ? formatFont(`➥ Usage: ${usage}\n`) : '';
+    const creditsMessage = credits ? formatFont(`➥ Credits: ${credits}\n`) : '';
+    const versionMessage = version ? formatFont(`➥ Version: ${version}\n`) : '';
+    const cooldownMessage = cooldown ? formatFont(`➥ Cooldown: ${cooldown} second(s)\n`) : '';
+    const message = formatFont(`〔 Command 〕\n\n➥ Name: ${name}\n${versionMessage}${roleMessage}\n${aliasesMessage}${descriptionMessage}${usageMessage}${creditsMessage}${cooldownMessage}`);
     api.sendMessage(message, event.threadID, event.messageID);
   } else {
     api.sendMessage(formatFont('Command not found.'), event.threadID, event.messageID);

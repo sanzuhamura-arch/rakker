@@ -146,12 +146,12 @@ function ensureWebSocketConnection(api) {
 module.exports.config = {
   name: "gagstock",
   version: "2.1.0",
-  role: 0,
+  role: 2,
   hasPrefix: true,
   aliases: [],
   description: "GAG tracker with favorite item alerting, global last seen, and shared WebSocket.",
   usage: "gagstock on | off | fav add Carrot | lastseen egg",
-  credits: "Jerome Jamis",
+  credits: "Zark",
   cooldown: 5,
 };
 

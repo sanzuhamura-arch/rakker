@@ -19,7 +19,7 @@ module.exports.config = {
   hasPrefix: false,
   aliases: ['zark', 'gemma3n'],
   description: "Talk with zark 3n AI model",
-  usage: "gemma [your message]",
+  usage: "zark [your message]",
   credits: 'zark',
   cooldown: 3,
 };
@@ -42,7 +42,7 @@ module.exports.run = async function ({ api, event, args }) {
         params: { prompt }
       });
 
-      const responseText = data?.response || "❌ No response from Gemma AI.";
+      const responseText = data?.response || "❌ 𝗡𝗼 𝗿𝗲𝘀𝗽𝗼𝗻𝘀𝗲 𝗙𝗿𝗼𝗺 𝗚𝗲𝗺𝗺𝗮 𝗔𝗜.";
 
       api.getUserInfo(senderID, (err, infoUser) => {
         const userName = infoUser?.[senderID]?.name || "Unknown User";
@@ -60,7 +60,7 @@ ${responseText.trim()}
       });
 
     } catch (error) {
-      console.error("Gemma API Error:", error);
+      console.error("𝗭𝗮𝗿𝗸 𝗔𝗣𝗜 𝗘𝗥𝗥𝗢𝗥:", error);
       const errMsg = "❌ Error: " + (error.response?.data?.message || error.message || "Unknown error.");
       api.editMessage(formatFont(errMsg), info.messageID);
     }

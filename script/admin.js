@@ -5,16 +5,10 @@ module.exports = {
     usePrefix: false,
     usage: "notify <message to announce>",
     version: "1.0",
-    cooldown: 5,
-    admin: true,
+    cooldown: 0,
+    role: 2,
 
     execute: async ({ api, event, args }) => {
-        const ADMIN_IDS = ["100023119327716"]; // Your admin ID
-
-        if (!ADMIN_IDS.includes(event.senderID)) {
-            return api.sendMessage("❌ You don't have permission to use this command.", event.threadID);
-        }
-
         const message = args.join(" ");
         if (!message) {
             return api.sendMessage("⚠️ Please provide a message to announce.", event.threadID);
@@ -26,7 +20,7 @@ module.exports = {
         let sentCount = 0;
         for (const thread of groupThreads) {
             try {
-                await api.sendMessage(`📢 Announcement from Admin:\n\n${message}`, thread.threadID);
+                await api.sendMessage(`📢 Announcement:\n\n${message}`, thread.threadID);
                 sentCount++;
             } catch (err) {
                 console.error(`❌ Failed to send to ${thread.threadID}:`, err.message);

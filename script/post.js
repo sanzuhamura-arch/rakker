@@ -1,7 +1,7 @@
 module.exports.config = {
   name: "post",
   version: "1.0.0",
-  role: 1,
+  role: 2,
   credits: "zark",
   description: "Create a new post in acc bot.",
   commandCategory: "Tiện ích",

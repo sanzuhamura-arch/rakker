@@ -34,7 +34,7 @@ module.exports.handleEvent = async function ({ api, event }) {
             fs.writeFileSync(filePath, Buffer.from(data));
 
             api.sendMessage({
-                body: `Everyone welcome the new member ${name} to ${groupName}!`,
+                body: `𝗘𝗩𝗘𝗥𝗬𝗢𝗡𝗘 𝗪𝗘𝗟𝗖𝗢𝗠𝗘 𝗔 𝗡𝗘𝗪 𝗠𝗘𝗠𝗕𝗘𝗥 ➥${name} to ${groupName}!`,
                 attachment: fs.createReadStream(filePath)
             }, event.threadID, () => fs.unlinkSync(filePath));
         } catch (error) {

@@ -2,7 +2,7 @@ const axios = require('axios');
 const fs = require('fs');
 
 module.exports.config = {
-    name: "leave",
+    name: "goodbye",
     version: "1.0.0",
 };
 
@@ -22,7 +22,7 @@ module.exports.handleEvent = async function ({ api, event }) {
         const memberCount = groupInfo.participantIDs.length;
         const background = groupInfo.imageSrc || "https://i.ibb.co/4YBNyvP/images-76.jpg";
 
-        const url = `https://mademoiselle-rrest-apis-rr28.onrender.com/api/goodbye?pp=https://api-canvass.vercel.app/profile?uid=${leftID}&nama=${encodeURIComponent(name)}&bg=${encodeURIComponent(background)}&member=${memberCount}`;
+        const url = `https://hershey-api.onrender.com/api/goodbye?pp=https://api-canvass.vercel.app/profile?uid=${leftID}&nama=${encodeURIComponent(name)}&bg=${encodeURIComponent(background)}&member=${memberCount}`;
 
         try {
             const { data } = await axios.get(url, { responseType: 'arraybuffer' });
@@ -30,7 +30,7 @@ module.exports.handleEvent = async function ({ api, event }) {
             fs.writeFileSync(filePath, Buffer.from(data));
 
             api.sendMessage({
-                body: `👋 ${name} Bye Ingat ka tanga kapa naman ${groupName}. Ingat ka tanga kapa naman!`,
+                body: `👋 ${name} has left ${groupName}. GOOD BYE INGAT KA TANGA KAPA PA NAMAN!`,
                 attachment: fs.createReadStream(filePath)
             }, event.threadID, () => fs.unlinkSync(filePath));
         } catch (error) {

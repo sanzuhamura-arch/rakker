@@ -5,7 +5,7 @@ module.exports.config = {
   name: "install",
   version: "1.0.2",
   role: 0,
-  credits: "CaPiLoT v7", //Don't Change cedits Mwuahhps
+  credits: "YenzyJS", //Don't Change cedits Mwuahhps
   description: "install a cmd using code but don't forget to put a exports.run to send a code and I'll fix the code. If there's no module in exports.run, it will be module.exports.run",
   hasPrefix: true,
   usage: ".install <name> <code>",

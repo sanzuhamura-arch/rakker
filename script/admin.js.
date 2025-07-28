@@ -1,0 +1,117 @@
+const { config } = global.GoatBot;
+const { writeFileSync } = require("fs-extra");
+
+module.exports = {
+	config: {
+		name: "admin",
+		version: "1.0",
+		author: "NTKhang (converted by ZarkDev098)",
+		countDown: 5,
+		role: 2,
+		description: {
+			vi: "Thêm, xóa, sửa quyền autobot",
+			en: "Add, remove, edit autobot role"
+		},
+		category: "box chat",
+		guide: {
+			vi: '   {pn} [add | -a] <uid | @tag>: Thêm quyền autobot cho người dùng'
+				+ '\n	  {pn} [remove | -r] <uid | @tag>: Xóa quyền autobot của người dùng'
+				+ '\n	  {pn} [list | -l]: Liệt kê danh sách autobot',
+			en: '   {pn} [add | -a] <uid | @tag>: Add autobot role for user'
+				+ '\n	  {pn} [remove | -r] <uid | @tag>: Remove autobot role of user'
+				+ '\n	  {pn} [list | -l]: List all autobots'
+		}
+	},
+
+	langs: {
+		vi: {
+			added: "✅ | Đã thêm quyền autobot cho %1 người dùng:\n%2",
+			alreadyAutobot: "\n⚠️ | %1 người dùng đã có quyền autobot từ trước rồi:\n%2",
+			missingIdAdd: "⚠️ | Vui lòng nhập ID hoặc tag người dùng muốn thêm quyền autobot",
+			removed: "✅ | Đã xóa quyền autobot của %1 người dùng:\n%2",
+			notAutobot: "⚠️ | %1 người dùng không có quyền autobot:\n%2",
+			missingIdRemove: "⚠️ | Vui lòng nhập ID hoặc tag người dùng muốn xóa quyền autobot",
+			listAutobot: "🤖 | Danh sách autobot:\n%1"
+		},
+		en: {
+			added: "✅ | Added autobot role for %1 users:\n%2",
+			alreadyAutobot: "\n⚠️ | %1 users already have autobot role:\n%2",
+			missingIdAdd: "⚠️ | Please enter ID or tag user to add autobot role",
+			removed: "✅ | Removed autobot role of %1 users:\n%2",
+			notAutobot: "⚠️ | %1 users don't have autobot role:\n%2",
+			missingIdRemove: "⚠️ | Please enter ID or tag user to remove autobot role",
+			listAutobot: "🤖 | List of autobots:\n%1"
+		}
+	},
+
+	onStart: async function ({ message, args, usersData, event, getLang }) {
+		// Use config.autobot for autobot roles
+		if (!Array.isArray(config.autobot)) config.autobot = [];
+		switch (args[0]) {
+			case "add":
+			case "-a": {
+				if (args[1]) {
+					let uids = [];
+					if (Object.keys(event.mentions).length > 0)
+						uids = Object.keys(event.mentions);
+					else if (event.messageReply)
+						uids.push(event.messageReply.senderID);
+					else
+						uids = args.filter(arg => !isNaN(arg));
+					const notAutobotIds = [];
+					const autobotIds = [];
+					for (const uid of uids) {
+						if (config.autobot.includes(uid))
+							autobotIds.push(uid);
+						else
+							notAutobotIds.push(uid);
+					}
+					config.autobot.push(...notAutobotIds);
+					const getNames = await Promise.all(uids.map(uid => usersData.getName(uid).then(name => ({ uid, name }))));
+					writeFileSync(global.client.dirConfig, JSON.stringify(config, null, 2));
+					return message.reply(
+						(notAutobotIds.length > 0 ? getLang("added", notAutobotIds.length, getNames.filter(({ uid }) => notAutobotIds.includes(uid)).map(({ uid, name }) => `• ${name} (${uid})`).join("\n")) : "")
+						+ (autobotIds.length > 0 ? getLang("alreadyAutobot", autobotIds.length, autobotIds.map(uid => `• ${uid}`).join("\n")) : "")
+					);
+				}
+				else
+					return message.reply(getLang("missingIdAdd"));
+			}
+			case "remove":
+			case "-r": {
+				if (args[1]) {
+					let uids = [];
+					if (Object.keys(event.mentions).length > 0)
+						uids = Object.keys(event.mentions);
+					else
+						uids = args.filter(arg => !isNaN(arg));
+					const notAutobotIds = [];
+					const autobotIds = [];
+					for (const uid of uids) {
+						if (config.autobot.includes(uid))
+							autobotIds.push(uid);
+						else
+							notAutobotIds.push(uid);
+					}
+					for (const uid of autobotIds)
+						config.autobot.splice(config.autobot.indexOf(uid), 1);
+					const getNames = await Promise.all(autobotIds.map(uid => usersData.getName(uid).then(name => ({ uid, name }))));
+					writeFileSync(global.client.dirConfig, JSON.stringify(config, null, 2));
+					return message.reply(
+						(autobotIds.length > 0 ? getLang("removed", autobotIds.length, getNames.map(({ uid, name }) => `• ${name} (${uid})`).join("\n")) : "")
+						+ (notAutobotIds.length > 0 ? getLang("notAutobot", notAutobotIds.length, notAutobotIds.map(uid => `• ${uid}`).join("\n")) : "")
+					);
+				}
+				else
+					return message.reply(getLang("missingIdRemove"));
+			}
+			case "list":
+			case "-l": {
+				const getNames = await Promise.all(config.autobot.map(uid => usersData.getName(uid).then(name => ({ uid, name }))));
+				return message.reply(getLang("listAutobot", getNames.map(({ uid, name }) => `• ${name} (${uid})`).join("\n")));
+			}
+			default:
+				return message.SyntaxError();
+		}
+	}
+};

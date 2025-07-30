@@ -1,6 +1,6 @@
 const path = require("path");
 const fs = require("fs-extra");
-const configPath = path.join(process.cwd(), "akhiro_config.json");
+const configPath = path.join(process.cwd(), "zark_config.json");
 
 const config = require(configPath);
 

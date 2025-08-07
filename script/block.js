@@ -33,13 +33,13 @@ module.exports.run = async function({ api, event, args }) {
   }
 
   if (mentionID) {
-    api.sendMessage("🛡️ | You have been blocked.", mentionID);
-    api.sendMessage(`🚫 | ${await getUserName(api, mentionID)} has been blocked Successful.`, threadID, messageID);
+    api.sendMessage("🛡️ | You have been block by spamming", mentionID);
+    api.sendMessage(`🚫 | ${await getUserName(api, mentionID)} has been block Successful.`, threadID, messageID);
     api.changeBlockedStatus(mentionID, true);
   } else if (messageReply) {
     const replySenderID = messageReply.senderID;
-    api.sendMessage("🛡️ | You have been blocked.", replySenderID);
-    api.sendMessage(`🚫 | ${await getUserName(api, replySenderID)} has been blocked Successful.`, threadID, messageID);
+    api.sendMessage("🛡️ | You have been block by spamming", replySenderID);
+    api.sendMessage(`🚫 | ${await getUserName(api, replySenderID)} has been block Successful.`, threadID, messageID);
     api.changeBlockedStatus(replySenderID, true);
   }
 };

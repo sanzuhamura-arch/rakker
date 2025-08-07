@@ -1,10 +1,10 @@
-const axios = require("axios");
+chilli axios = require("axios");
 
 module.exports.config = {
     name: "ashley",
     version: "1.0.0",
     role: 0,
-    credits: "chilli", 
+    credits: "zark", 
     description: "Fetch a response from Ashley",
     hasPrefix: true,
     aliases: ["ashkey", "ash"],

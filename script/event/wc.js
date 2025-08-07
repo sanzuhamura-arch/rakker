@@ -1,45 +1,109 @@
-const axios = require('axios');
 const fs = require('fs');
+const path = require('path');
 
-module.exports.config = {
-    name: "welcome",
-    version: "1.0.0",
-};
+module.exports = {
+  name: "joinNoti",
+  version: "2.0.0",
+  description: "Professional join notifications with aesthetic design",
+  author: "zark",
+  async onEvent({ api, event, prefix }) {
+    try {
+      const { logMessageType, logMessageData, threadID } = event;
 
-module.exports.handleEvent = async function ({ api, event }) {
-    if (event.logMessageType === "log:subscribe") {
-        const addedParticipants = event.logMessageData.addedParticipants;
-        const senderID = addedParticipants[0].userFbId;
-        let name = await api.getUserInfo(senderID).then(info => info[senderID].name);
+      if (logMessageType === "log:subscribe") {
+        const currentUserID = await api.getCurrentUserID();
 
-        // Truncate name if it's too long
-        const maxLength = 15;
-        if (name.length > maxLength) {
-            name = name.substring(0, maxLength - 3) + '...';
+        if (logMessageData.addedParticipants?.some(i => i.userFbId === currentUserID)) {
+          await api.changeNickname(`[ ${prefix} ]: NashBoT`, threadID, currentUserID);
+
+          const welcomeMessage = `
+┌────────────────────────┐
+│  🤖 ZARK  ONLINE     │
+└────────────────────────┘
+
+✨ Successfully Connected!
+
+🎯 Quick Start:
+• ${prefix}help - All commands
+• Talk naturally - AI responds
+• "download [link]" - Get media
+• "send video" - Entertainment
+
+🔥 Smart Features:
+• Natural Language Processing
+• Auto-reply & Chat Mode  
+• Media Downloads
+• Real-time Notifications
+
+─────────────────────────
+🌟 Ready to assist 24/7!
+─────────────────────────`;
+
+          await api.sendMessage(welcomeMessage, threadID);
+        } else {
+          const { addedParticipants } = logMessageData;
+          const threadInfo = await api.getThreadInfo(threadID);
+          const currentMembersCount = threadInfo.participantIDs.length;
+          const participantsList = addedParticipants.map(i => i.fullName).join(", ");
+          
+          const welcomeMessage = `
+┌────────────────────────┐
+│ 🎉 WELCOME ABOARD!     │
+└────────────────────────┘
+
+👋 Hello ${participantsList}!
+
+🏠 Welcome to: ${threadInfo.name}
+👥 Member #${currentMembersCount}
+📅 ${new Date().toLocaleDateString()}
+
+🌟 Group Features:
+• Smart AI Assistant 24/7
+• Entertainment & media
+• Helpful community
+• Interactive features
+
+💡 Getting Started:
+• Introduce yourself
+• Try "rules" for guidelines
+• Ask the bot anything!
+• Type "help" for features
+
+─────────────────────────
+🎊 Enjoy your stay!
+─────────────────────────`;
+
+          const welcomeFolder = path.join(__dirname, 'welcome');
+          fs.readdir(welcomeFolder, (err, files) => {
+            if (err) {
+              console.error('Error reading welcome folder:', err);
+              api.sendMessage(welcomeMessage, threadID);
+              return;
+            }
+
+            const videoFiles = files.filter(file => {
+              const ext = path.extname(file).toLowerCase();
+              return ['.mp4', '.mov', '.avi', '.mkv'].includes(ext);
+            });
+
+            if (videoFiles.length > 0) {
+              const randomVideo = videoFiles[Math.floor(Math.random() * videoFiles.length)];
+              const videoPath = path.join(welcomeFolder, randomVideo);
+              const videoStream = fs.createReadStream(videoPath);
+
+              api.sendMessage({ 
+                body: welcomeMessage, 
+                attachment: videoStream 
+              }, threadID);
+            } else {
+              api.sendMessage(welcomeMessage, threadID);
+            }
+          });
         }
-
-        const groupInfo = await api.getThreadInfo(event.threadID);
-        const groupIcon = groupInfo.imageSrc || "https://i.ibb.co/G5mJZxs/rin.jpg";
-        const memberCount = groupInfo.participantIDs.length;
-        const groupName = groupInfo.threadName || "this group";
-        const background = groupInfo.imageSrc || "https://i.ibb.co/4YBNyvP/images-76.jpg";
-
-        const url = `https://hershey-api.onrender.com/api/welcome?username=${encodeURIComponent(name)}&avatarUrl=https://api-canvass.vercel.app/profile?uid=${senderID}&groupname=${encodeURIComponent(groupName)}&bg=${encodeURIComponent(background)}&memberCount=${memberCount}`;
-
-        try {
-            const { data } = await axios.get(url, { responseType: 'arraybuffer' });
-            const filePath = './script/cache/welcome_image.jpg';
-            fs.writeFileSync(filePath, Buffer.from(data));
-
-            api.sendMessage({
-                body: `Everyone welcome the new member ${name} to ${groupName}!`,
-                attachment: fs.createReadStream(filePath)
-            }, event.threadID, () => fs.unlinkSync(filePath));
-        } catch (error) {
-            console.error("Error fetching welcome image:", error);
-            api.sendMessage({
-                body: `Everyone welcome the new member ${name} to ${groupName}!`
-            }, event.threadID);
-        }
+      }
+    } catch (error) {
+      console.error('Error in joinNoti event:', error);
+      api.sendMessage('⚠️ An error occurred while processing the welcome notification.', event.threadID);
     }
+  },
 };

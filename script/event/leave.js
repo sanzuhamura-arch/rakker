@@ -30,7 +30,7 @@ module.exports.handleEvent = async function ({ api, event }) {
             fs.writeFileSync(filePath, Buffer.from(data));
 
             api.sendMessage({
-                body: `👋 ${name} has left ${groupName}. GOOD BYE INGAT KA TANGA KAPA PA NAMAN!`,
+                body: `👋 ${name} has left ${groupName}. We’ll miss you!`,
                 attachment: fs.createReadStream(filePath)
             }, event.threadID, () => fs.unlinkSync(filePath));
         } catch (error) {

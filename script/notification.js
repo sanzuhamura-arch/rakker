@@ -1,49 +1,82 @@
+const axios = require("axios");
+const fs = require("fs-extra");
+const path = require("path");
+
 module.exports.config = {
-    name: "sendnoti",
-    version: "1.0.0",
-    hasPermssion: 2,
-    credits: "zark",
-    description: "Sends a message to all groups and can only be done by the admin.",
-    usePrefix: true,
-    commandCategory: "noti",
-    usages: "[Text]",
-    cooldowns: 3
+	name: "sendnoti",
+	version: "1.1.0",
+	role: 2,
+	description: "Sends a message to all groups and can only be done by the admin.",
+	hasPrefix: false,
+	aliases: ["noti"],
+	usages: "[Text]",
+	cooldown: 0,
 };
 
-module.exports.run = async ({ api, event, args }) => {
-    // Replace 'your_developer_uid' with the actual UID of the developer who should have access
-    const allowedUID = ['61578254222670']; 
+module.exports.run = async function ({ api, event, args, admin }) {
+	const threadList = await api.getThreadList(100, null, ["INBOX"]);
+	let sentCount = 0;
+	const custom = args.join(" ");
 
-    // Check if the user sending the command is the developer
-    if (!allowedUID.includes(event.senderID)) {
-        return api.sendMessage("› You are not authorized to use this command.", event.threadID);
-    }
+	async function sendMessage(thread) {
+		try {
+			await api.sendMessage(
+`➜ 𝗡𝗢𝗧𝗜𝗙𝗜𝗖𝗔𝗧𝗜𝗢𝗡 𝗙𝗥𝗢𝗠 𝗔𝗗𝗠𝗜𝗡
+▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱
+➜ ${custom}
+▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱
 
-    const threadList = await api.getThreadList(25, null, ['INBOX']);
-    let sentCount = 0;
-    const custom = args.join(' ');
+				thread.threadID
+			);
+			sentCount++;
 
-    async function sendMessage(thread) {
-        try {
-            await api.sendMessage(`NOTICE FROM ADMIN BOT\n ----------------\n Developer Name: ZARK DEV\n ---------------\n\n『𝗡𝗼𝘁𝗶𝗰𝗲』"${custom}"`, thread.threadID);
-            sentCount++;
-        } catch (error) {
-            console.error("Error sending a message:", error);
-        }
-    }
+			const content = `${custom}`;
+			const languageToSay = "tl"; 
+			const pathFemale = path.resolve(__dirname, "cache", `${thread.threadID}_female.mp3`);
 
-    for (const thread of threadList) {
-        if (sentCount >= 20) {
-            break;
-        }
-        if (thread.isGroup && thread.name != thread.threadID && thread.threadID != event.threadID) {
-            await sendMessage(thread);
-        }
-    }
+			await downloadFile(
+				`https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(content)}&tl=${languageToSay}&client=tw-ob&idx=1`,
+				pathFemale
+		);
+			api.sendMessage(
+				{ attachment: fs.createReadStream(pathFemale) },
+				thread.threadID,
+				() => fs.unlinkSync(pathFemale)
+			);
+		} catch (error) {
+			console.error("Error sending a message:", error);
+		}
+	}
 
-    if (sentCount > 0) {
-        api.sendMessage(`› Sent the notification successfully.`, event.threadID);
-    } else {
-        api.sendMessage("› No eligible group threads found to send the message to.", event.threadID);
-    }
+	for (const thread of threadList) {
+		if (sentCount >= 20) {
+			break;
+		}
+		if (thread.isGroup && thread.name != thread.threadID && thread.threadID != event.threadID) {
+			await sendMessage(thread);
+		}
+	}
+
+	if (sentCount > 0) {
+		api.sendMessage(`› Sent the notification successfully.`, event.threadID);
+	} else {
+		api.sendMessage(
+			"› No eligible group threads found to send the message to.",
+			event.threadID
+		);
+	}
 };
+
+async function downloadFile(url, filePath) {
+	const writer = fs.createWriteStream(filePath);
+	const response = await axios({
+		url,
+		method: 'GET',
+		responseType: 'stream'
+	});
+	response.data.pipe(writer);
+	return new Promise((resolve, reject) => {
+		writer.on('finish', resolve);
+		writer.on('error', reject);
+	});
+}

@@ -53,7 +53,7 @@ module.exports.handleEvent = async function ({ api, event }) {
 🤝 Please feel free to interact, share, and enjoy your stay.
 
 ━━━━━━━━━━━━━━━━━━━━━━━
-👑 Admin: Homer Rebatis
+👑 Admin Zark Dev ❤️ 
 💖 Sending you warm vibes! Ummmma~ 😘
 ━━━━━━━━━━━━━━━━━━━━━━━`;
 

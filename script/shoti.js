@@ -1,74 +1,63 @@
-const fs = require("fs");
-const axios = require("axios");
+const axios = require('axios');
+const path = require('path');
+const fs = require('fs');
 
 module.exports.config = {
-  name: "shoti",
-  version: "1.0.0",
-  role: 0,
-  hasPrefix: false,
-  description: "Generate a random TikTok video.",
-  credits: "zark",
-  cooldown: 5,
+    name: "shoti",
+    version: "1.0.0",
+    role: 0,
+    description: "Fetch a random Shoti video.",
+    prefix: false,
+    premium: false,
+    credits: "zark",
+    cooldowns: 10,
+    category: "media"
 };
 
-let fontEnabled = true;
+module.exports.run = async function ({ api, event }) {
+    try {
+        api.sendMessage("🎬 Fetching a random Shoti video, please wait...", event.threadID, () => {}, event.messageID);
 
-function formatFont(text) {
-  const fontMapping = {
-    a: "𝖺", b: "𝖻", c: "𝖼", d: "𝖽", e: "𝖾", f: "𝖿", g: "𝗀", h: "𝗁", i: "𝗂", j: "𝗃", k: "𝗄", l: "𝗅", m: "𝗆",
-    n: "𝗇", o: "𝗈", p: "𝗉", q: "𝗊", r: "𝗋", s: "𝗌", t: "𝗍", u: "𝗎", v: "𝗏", w: "𝗐", x: "𝗑", y: "𝗒", z: "𝗓",
-    A: "𝖠", B: "𝖡", C: "𝖢", D: "𝖣", E: "𝖤", F: "𝖥", G: "𝖦", H: "𝖧", I: "𝖨", J: "𝖩", K: "𝖪", L: "𝖫", M: "𝖬",
-    N: "𝖭", O: "𝖮", P: "𝖯", Q: "𝖰", R: "𝖱", S: "𝖲", T: "𝖳", U: "𝖴", V: "𝖵", W: "𝖶", X: "𝖷", Y: "𝖸", Z: "𝖹"
-  };
-
-  let formattedText = "";
-  for (const char of text) {
-    if (fontEnabled && char in fontMapping) {
-      formattedText += fontMapping[char];
-    } else {
-      formattedText += char;
-    }
-  }
-  return formattedText;
-}
-
-module.exports.run = async function({ api, event, args }) {
-  const { messageID, threadID } = event;
-
-  const downloadMessage = await api.sendMessage(formatFont("⌛"), threadID);
-
-  try {
-    const response = await axios.get(`https://betadash-shoti-yazky.vercel.app/shotizxx?apikey=shipazu`);
-    const data = response.data;
-
-    const path = __dirname + `/cache/shoti.mp4`;
-
-    const videoResponse = await axios({
-      url: data.shotiurl,
-      method: 'GET',
-      responseType: 'stream'
-    });
-
-    const writer = fs.createWriteStream(path);
-    videoResponse.data.pipe(writer);
-
-    writer.on('finish', () => {
-      setTimeout(() => {
-        api.sendMessage({
-          body: formatFont(`Title: ${data.title}\nUsername: @${data.username}\nNickname: ${data.nickname}\nDuration: ${data.duration} seconds\nRegion: ${data.region}`),
-          attachment: fs.createReadStream(path)
-        }, threadID, () => {
-          api.unsendMessage(downloadMessage.messageID);
-          fs.unlinkSync(path);
+        // API call
+        const response = await axios.get('https://kaiz-apis.gleeze.com/?fbclid=IwZXh0bgNhZW0CMTEAAR5UMTk6EoB4fReOqcLZHUyAJ6mu0JY6Fw0v6P3WLyvgEpIRmvkPwehmk4wWKg_aem_l_tAqvRdq-wW5gc-NnFzsQ', {
+            headers: { apikey: '4fe7e522-70b7-420b-a746-d7a23db49ee5' }
         });
-      }, 5000);
-    });
 
-    writer.on('error', (err) => {
-      api.sendMessage(formatFont(`Error: ${err}`), threadID, messageID);
-    });
+        const videoUrl = response.data?.result?.content 
+                      || response.data?.result?.url 
+                      || response.data?.url;
 
-  } catch (err) {
-    api.sendMessage(formatFont(`Error: ${err}`), threadID, messageID);
-  }
+        if (!videoUrl) {
+            return api.sendMessage("❌ Failed to fetch Shoti video. Try again later.", event.threadID, () => {}, event.messageID);
+        }
+
+        const fileName = `${event.messageID}.mp4`;
+        const filePath = path.join(__dirname, fileName);
+
+        const downloadResponse = await axios({
+            method: "GET",
+            url: videoUrl,
+            responseType: "stream"
+        });
+
+        const writer = fs.createWriteStream(filePath);
+        downloadResponse.data.pipe(writer);
+
+        writer.on("close", () => {
+            api.sendMessage({
+                body: "🎥 Here’s your random Shoti video!",
+                attachment: fs.createReadStream(filePath)
+            }, event.threadID, () => fs.unlinkSync(filePath), event.messageID);
+        });
+
+        writer.on("error", (err) => {
+            console.error("Download error:", err);
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+            api.sendMessage("🚫 Error downloading the video. Please try again.", event.threadID, () => {}, event.messageID);
+        });
+
+    } catch (error) {
+        console.error("Error fetching Shoti video:", error);
+        api.sendMessage("🚫 Error fetching Shoti video. Try again later.", event.threadID, () => {}, event.messageID);
+    }
 };

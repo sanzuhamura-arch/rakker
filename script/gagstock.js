@@ -1,4 +1,3 @@
-const { sendMessage } = require("../handles/sendMessage");
 const WebSocket = require("ws");
 const axios = require("axios");
 
@@ -35,10 +34,7 @@ function getTimeAgo(date) {
 }
 
 function formatItems(items, useEmoji = true) {
-  return items
-    .filter(i => i.quantity > 0)
-    .map(i => `- ${useEmoji && i.emoji ? i.emoji + " " : ""}${i.name}: ${formatValue(i.quantity)}`)
-    .join("\n");
+  return items.map(i => `- ${useEmoji && i.emoji ? i.emoji + " " : ""}${i.name}: ${formatValue(i.quantity)}`).join("\n");
 }
 
 function cleanText(text) {
@@ -51,13 +47,11 @@ function updateLastSeen(category, items) {
   const catMap = globalLastSeen.get(category);
   const now = getPHTime();
   for (const item of items) {
-    if (item.quantity > 0) {
-      catMap.set(item.name, now);
-    }
+    catMap.set(item.name, now);
   }
 }
 
-function ensureWebSocketConnection() {
+function ensureWebSocketConnection(api) {
   if (sharedWebSocket && sharedWebSocket.readyState === WebSocket.OPEN) return;
 
   sharedWebSocket = new WebSocket("wss://gagstock.gleeze.com");
@@ -73,16 +67,15 @@ function ensureWebSocketConnection() {
   sharedWebSocket.on("message", async (data) => {
     try {
       const payload = JSON.parse(data);
-      if (payload.status !== "success" || !payload.data) return;
+      if (payload.status !== "success") return;
 
       const stock = payload.data;
       const stockData = {
-        gear: stock.gear || { items: [] },
-        seed: stock.seed || { items: [] },
-        egg: stock.egg || { items: [] },
-        cosmetics: stock.cosmetics || { items: [] },
-        event: stock.honey || { items: [] },
-        travelingmerchant: stock.travelingmerchant || { items: [] }
+        gear: stock.gear,
+        seed: stock.seed,
+        egg: stock.egg,
+        cosmetics: stock.cosmetics,
+        event: stock.honey,
       };
 
       updateLastSeen("gear", stockData.gear.items);
@@ -90,23 +83,20 @@ function ensureWebSocketConnection() {
       updateLastSeen("egg", stockData.egg.items);
       updateLastSeen("cosmetics", stockData.cosmetics.items);
       updateLastSeen("event", stockData.event.items);
-      updateLastSeen("travelingmerchant", stockData.travelingmerchant.items);
 
       for (const [senderId, session] of activeSessions.entries()) {
         const favList = favoriteMap.get(senderId) || [];
         let sections = [];
         let matchCount = 0;
 
-        function checkAndAdd(label, section, useEmoji, altCountdown = null) {
-          const items = Array.isArray(section?.items) ? section.items.filter(i => i.quantity > 0) : [];
-          if (items.length === 0) return false;
+        function checkAndAdd(label, section, useEmoji) {
+          const items = Array.isArray(section.items) ? section.items : [];
           const matchedItems = favList.length > 0
             ? items.filter(i => favList.includes(cleanText(i.name)))
             : items;
           if (favList.length > 0 && matchedItems.length === 0) return false;
           matchCount += matchedItems.length;
-          const restockLabel = section.countdown || altCountdown;
-          sections.push(`${label}:\n${formatItems(matchedItems, useEmoji)}${restockLabel ? `\n⏳ Restock In: ${restockLabel}` : ""}`);
+          sections.push(`${label}:\n${formatItems(matchedItems, useEmoji)}\n⏳ Restock In: ${section.countdown}`);
           return true;
         }
 
@@ -115,7 +105,6 @@ function ensureWebSocketConnection() {
         checkAndAdd("🥚 𝗘𝗴𝗴𝘀", stockData.egg, true);
         checkAndAdd("🎨 𝗖𝗼𝘀𝗺𝗲𝘁𝗶𝗰𝘀", stockData.cosmetics, false);
         checkAndAdd("🎉 𝗘𝘃𝗲𝗻𝘁", stockData.event, false);
-        checkAndAdd("🚚 𝗧𝗿𝗮𝘃𝗲𝗹𝗶𝗻𝗴 𝗠𝗲𝗿𝗰𝗵𝗮𝗻𝘁", stockData.travelingmerchant, false, stockData.travelingmerchant.appearIn);
 
         if (favList.length > 0 && matchCount === 0) continue;
         if (sections.length === 0) continue;
@@ -125,9 +114,7 @@ function ensureWebSocketConnection() {
           hour12: true, day: "2-digit", month: "short", year: "numeric"
         });
 
-        const weather = await axios.get("https://growagardenstock.com/api/stock/weather")
-          .then(res => res.data).catch(() => null);
-
+        const weather = await axios.get("https://growagardenstock.com/api/stock/weather").then(res => res.data).catch(() => null);
         const weatherInfo = weather
           ? `🌤️ 𝗪𝗲𝗮𝘁𝗵𝗲𝗿: ${weather.icon} ${weather.weatherType}\n📋 ${weather.description}\n🎯 ${weather.cropBonuses}\n`
           : "";
@@ -142,10 +129,7 @@ function ensureWebSocketConnection() {
 
         lastSentCache.set(senderId, messageKey);
 
-        await sendMessage(senderId, {
-          text: `${title}\n\n${sections.join("\n\n")}\n\n${weatherInfo}📅 Updated at (PH): ${updatedAt}`
-        }, session.pageAccessToken);
-
+        await api.sendMessage(`${title}\n\n${sections.join("\n\n")}\n\n${weatherInfo}📅 Updated at (PH): ${updatedAt}`, session.threadID);
       }
     } catch {}
   });
@@ -153,158 +137,94 @@ function ensureWebSocketConnection() {
   sharedWebSocket.on("close", () => {
     clearInterval(keepAliveInterval);
     sharedWebSocket = null;
-    setTimeout(ensureWebSocketConnection, 3000);
+    setTimeout(() => ensureWebSocketConnection(api), 3000);
   });
 
   sharedWebSocket.on("error", () => sharedWebSocket?.close());
 }
 
-async function fetchPredict(params) {
-  try {
-    const res = await axios.get("https://gagstock.gleeze.com/predict", { params });
-    if (res.data.status === "success" && res.data.data) return res.data.data;
-  } catch {}
-  return null;
-}
-
-function formatPredictData(data, filters = []) {
-  if (!data) return "⚠️ Failed to fetch predictions.";
-
-  const cats = ["seed", "gear", "egg"];
-  let selectedCats = cats;
-  if (filters.length > 0) {
-    selectedCats = filters.filter(c => cats.includes(c));
-  }
-
-  const lines = [];
-  for (const cat of selectedCats) {
-    if (!data[cat] || !Array.isArray(data[cat])) continue;
-    if (data[cat].length === 0) continue;
-
-    lines.push(`🔹 ${cat.toUpperCase()} (${data[cat].length})`);
-    for (const item of data[cat]) {
-      const showTime = item.showTime || "Unknown";
-      lines.push(`- ${item.name}: ${showTime}`);
-    }
-    lines.push("");
-  }
-
-  if (lines.length === 0) return "⚠️ No predictions found for the specified filters.";
-  return lines.join("\n").trim();
-}
-
-module.exports = {
+module.exports.config = {
   name: "gagstock",
-  description: "Track Grow A Garden stock with favorites, shared WebSocket, global lastseen and gagstock predict support.",
-  usage: "gagstock on | gagstock off | gagstock fav add Item1 | gagstock lastseen gear | egg | gagstock predict | gagstock predict seed | gagstock predict gear | gagstock predict egg | gagstock predict carrot | watering can",
-  category: "Tools ⚒️",
-
-  async execute(senderId, args, pageAccessToken) {
-    const subcmd = args[0]?.toLowerCase();
-
-    if (subcmd === "fav") {
-      const action = args[1]?.toLowerCase();
-      const input = args.slice(2).join(" ").split("|").map(i => cleanText(i)).filter(Boolean);
-      if (!action || !["add", "remove"].includes(action) || input.length === 0) {
-        return sendMessage(senderId, { text: "📌 Usage: gagstock fav add/remove Item1 | Item2" }, pageAccessToken);
-      }
-      const currentFav = favoriteMap.get(senderId) || [];
-      const updated = new Set(currentFav);
-      for (const name of input) {
-        if (action === "add") updated.add(name);
-        else if (action === "remove") updated.delete(name);
-      }
-      favoriteMap.set(senderId, Array.from(updated));
-      return sendMessage(senderId, { text: `✅ Favorite list updated: ${Array.from(updated).join(", ") || "(empty)"}` }, pageAccessToken);
-    }
-
-    if (subcmd === "lastseen") {
-      const filters = args.slice(1).join(" ").split("|").map(c => c.trim().toLowerCase()).filter(Boolean);
-      const categories = filters.length > 0 ? filters : ["gear", "seed", "egg", "cosmetics", "event", "travelingmerchant"];
-
-      let result = [];
-      for (const cat of categories) {
-        const entries = globalLastSeen.get(cat);
-        if (!entries || entries.size === 0) continue;
-
-        const list = Array.from(entries.entries())
-          .sort((a, b) => new Date(b[1]) - new Date(a[1]))
-          .map(([name, date]) => `• ${name}: ${getTimeAgo(date)}`);
-
-        result.push(`🔹 ${cat.toUpperCase()} (${list.length})\n${list.join("\n")}`);
-      }
-
-      if (result.length === 0) {
-        return sendMessage(senderId, { text: "⚠️ No last seen data found for the selected category." }, pageAccessToken);
-      }
-
-      return sendMessage(senderId, { text: `📦 𝗟𝗮𝘀𝘁 𝗦𝗲𝗲𝗻 𝗜𝘁𝗲𝗺𝘀\n\n${result.join("\n\n")}` }, pageAccessToken);
-    }
-
-    if (subcmd === "off") {
-      if (!activeSessions.has(senderId)) {
-        return sendMessage(senderId, { text: "⚠️ You don't have an active gagstock session." }, pageAccessToken);
-      }
-      activeSessions.delete(senderId);
-      lastSentCache.delete(senderId);
-      return sendMessage(senderId, { text: "🛑 Gagstock tracking stopped." }, pageAccessToken);
-    }
-
-    if (subcmd === "predict") {
-      const inputFilters = args.slice(1).join(" ").split("|").map(i => cleanText(i)).filter(Boolean);
-
-      const allowedTypes = ["seed", "gear", "egg"];
-      const filters = [];
-      const items = [];
-
-      for (const f of inputFilters) {
-        if (allowedTypes.includes(f)) filters.push(f);
-        else items.push(f);
-      }
-
-      let query = "";
-      if (filters.length === 0 && items.length === 0) {
-        query = "seed|gear|egg";
-      } else {
-        const parts = [];
-        if (filters.length > 0) parts.push(filters.join("|"));
-        if (items.length > 0) parts.push(items.join("|"));
-        query = parts.join("|");
-      }
-
-      const data = await fetchPredict({ q: query });
-      if (!data) return sendMessage(senderId, { text: "⚠️ Failed to fetch predictions from API." }, pageAccessToken);
-
-      if (items.length > 0) {
-        for (const cat of ["seed", "gear", "egg"]) {
-          if (data[cat]) {
-            data[cat] = data[cat].filter(i => items.includes(cleanText(i.name)));
-          }
-        }
-      }
-
-      if (filters.length > 0) {
-        for (const cat of ["seed", "gear", "egg"]) {
-          if (!filters.includes(cat)) data[cat] = [];
-        }
-      }
-
-      const formatted = formatPredictData(data, filters.length > 0 ? filters : ["seed", "gear", "egg"]);
-      return sendMessage(senderId, { text: formatted }, pageAccessToken);
-    }
-
-    if (subcmd !== "on") {
-      return sendMessage(senderId, {
-        text: "📌 Usage:\n• gagstock on\n• gagstock fav add Carrot | Watering Can\n• gagstock lastseen gear | seed\n• gagstock predict\n• gagstock predict seed\n• gagstock predict gear | egg\n• gagstock predict carrot | watering can\n• gagstock off"
-      }, pageAccessToken);
-    }
-
-    if (activeSessions.has(senderId)) {
-      return sendMessage(senderId, { text: "📡 You're already tracking Gagstock. Use gagstock off to stop." }, pageAccessToken);
-    }
-
-    activeSessions.set(senderId, { pageAccessToken });
-    await sendMessage(senderId, { text: "✅ Gagstock tracking started via WebSocket!" }, pageAccessToken);
-    ensureWebSocketConnection();
-  }
+  version: "2.1.0",
+  role: 0,
+  hasPrefix: true,
+  aliases: [],
+  description: "GAG tracker with favorite item alerting, global last seen, and shared WebSocket.",
+  usage: "gagstock on | off | fav add Carrot | lastseen egg",
+  credits: "zark",
+  cooldown: 5,
 };
+
+module.exports.run = async function ({ api, event, args }) {
+  const senderId = event.senderID;
+  const threadID = event.threadID;
+  const messageID = event.messageID;
+
+  const subcmd = args[0]?.toLowerCase();
+
+  if (subcmd === "fav") {
+    const action = args[1]?.toLowerCase();
+    const input = args.slice(2).join(" ").split("|").map(i => cleanText(i)).filter(Boolean);
+    if (!action || !["add", "remove"].includes(action) || input.length === 0) {
+      return api.sendMessage("📌 Usage: gagstock fav add/remove Item1 | Item2", threadID, messageID);
+    }
+
+    const currentFav = favoriteMap.get(senderId) || [];
+    const updated = new Set(currentFav);
+
+    for (const name of input) {
+      if (action === "add") updated.add(name);
+      else if (action === "remove") updated.delete(name);
+    }
+
+    favoriteMap.set(senderId, Array.from(updated));
+    return api.sendMessage(`✅ Favorite list updated: ${Array.from(updated).join(", ") || "(empty)"}`, threadID, messageID);
+  }
+
+  if (subcmd === "lastseen") {
+    const filters = args.slice(1).join(" ").split("|").map(c => c.trim().toLowerCase()).filter(Boolean);
+    const categories = filters.length > 0 ? filters : ["gear", "seed", "egg", "cosmetics", "event"];
+
+    let result = [];
+    for (const cat of categories) {
+      const entries = globalLastSeen.get(cat);
+      if (!entries || entries.size === 0) continue;
+
+      const list = Array.from(entries.entries())
+        .sort((a, b) => new Date(b[1]) - new Date(a[1]))
+        .map(([name, date]) => `• ${name}: ${getTimeAgo(date)}`);
+
+      result.push(`🔹 ${cat.toUpperCase()} (${list.length})\n${list.join("\n")}`);
+    }
+
+    if (result.length === 0) {
+      return api.sendMessage("⚠️ No last seen data found for the selected category.", threadID, messageID);
+    }
+
+    return api.sendMessage(`📦 𝗟𝗮𝘀𝘁 𝗦𝗲𝗲𝗻 𝗜𝘁𝗲𝗺𝘀\n\n${result.join("\n\n")}`, threadID, messageID);
+  }
+
+  if (subcmd === "off") {
+    if (!activeSessions.has(senderId)) {
+      return api.sendMessage("⚠️ You don't have an active gagstock session.", threadID, messageID);
+    }
+    activeSessions.delete(senderId);
+    lastSentCache.delete(senderId);
+    return api.sendMessage("🛑 Gagstock tracking stopped.", threadID, messageID);
+  }
+
+  if (subcmd !== "on") {
+    return api.sendMessage(
+      "📌 Usage:\n• gagstock on\n• gagstock fav add Carrot | Watering Can\n• gagstock lastseen gear | seed\n• gagstock off",
+      threadID,
+      messageID
+    );
+  }
+
+  if (activeSessions.has(senderId)) {
+    return api.sendMessage("📡 You're already tracking Gagstock. Use gagstock off to stop.", threadID, messageID);
+  }
+
+  activeSessions.set(senderId, { threadID });
+  await api.sendMessage("✅ Gagstock tracking started via WebSocket!", threadID, messageID);
+  ensureWebSocketConnection(apiJamis

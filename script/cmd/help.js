@@ -46,7 +46,7 @@ module.exports.run = async function ({ api, event, enableCommands, args, Utils, 
 
       helpMessage += `\n${formatFont(`Page 1/1 (all shown)`)}.`;
       helpMessage += `\nType '${prefix}help <command>' for command details.`;
-      helpMessage += `\n\n🔗: https://fba-rynx.onrender.com/site`;
+      helpMessage += `\n\n🔗: https://zark-autobot-gsbo.onrender.com/`;
 
       return api.sendMessage(helpMessage, event.threadID, event.messageID);
     }

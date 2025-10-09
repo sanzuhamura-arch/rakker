@@ -1,21 +1,24 @@
 const axios = require('axios');
 
 module.exports.config = {
-    name: "ask",
-    version: 1.0,
-    description: "AI",
-    hasPrefix: false,
-    usages: "{pn} [prompt]",
-    aliases: [],
-    cooldown: 0,
+  name: "goody",
+  version: "9",
+  role: 0,
+  hasPrefix: false,
+  description: "AI assistant",
+  aliases: ["Goody"],
+  cooldowns: 0,
 };
 
-module.exports.run = async function ({ api, event, args }) {
-    try {
-        const prompt = args.join(" ");
-        if (!prompt) {
-        const messageInfo = await new Promise(resolve => {
-            api.sendMessage("Hey I'm your virtual assistant, ask me a question.", event.threadID, (err, info) => {
+module.exports.run = async function ({api, event, args}) {
+  const symbols = ["⎔", "☰"];
+  const randomIndex = Math.floor(Math.random() * symbols.length);
+  const tae = symbols[randomIndex];
+  const query = encodeURIComponent(args.join(" "));
+
+if (!query) {
+          const messageInfo = await new Promise(resolve => {
+            api.sendMessage('Please provide a question first!', event.threadID, (err, info) => {
                 resolve(info);
             });
         });
@@ -25,13 +28,20 @@ module.exports.run = async function ({ api, event, args }) {
         }, 10000);
 
         return;
-    }
+}
 
-        const response = await axios.get(`https://hiro-ai.vercel.app/ai?ask=${encodeURIComponent(prompt)}`);
-        const answer = response.data.response;
+      const cliff = await new Promise(resolve => { api.sendMessage('🔍 Searching Please Wait....', event.threadID, (err, info1) => {
+      resolve(info1);
+     }, event.messageID);
+    });
 
-        await api.sendMessage(answer, event.threadID);
-    } catch (error) {
-        console.error("Error");
-    }
+  const apiUrl = `https://betadash-api-swordslush.vercel.app/goody?ask=${query}`;
+
+  try {
+    const response = await axios.get(apiUrl);
+    const ans = response.data.response;
+    api.editMessage(ans, cliff.messageID);
+  } catch (error) {
+    api.sendMessage("API DOWN", event.threadID, event.messageID);
+  }
 };

@@ -1,59 +1,62 @@
-const axios = require("axios");
+const axios = require('axios');
+const path = require('path');
+const fs = require('fs-extra');
 
 module.exports.config = {
-  name: "gemini",
-  version: "1.0.0",
-  hasPermission: 0,
-  description: "Ask the Gemini AI a question and get a thoughtful answer.",
-  commandCategory: "ai",
-  usages: "gemini [question]",
-  cooldowns: 5,
-  role: 0,
-  hasPrefix: true
+    name: "shoti",
+    version: "1.0.0",
+    role: 0,
+    description: "Fetch a random Shoti video.",
+    prefix: false,
+    premium: false,
+    cooldowns: 10,
+    category: "media"
 };
 
-module.exports.run = async function ({ api, event, args }) {
-  const { threadID, messageID } = event;
-  const prompt = args.join(" ");
+module.exports.run = async function ({ api, event }) {
+    try {
+        // Inform user about the fetching process
+        api.sendMessage("🎬 𝗙𝗲𝘁𝗰𝗵𝗶𝗻𝗴 𝗮 𝗿𝗮𝗻𝗱𝗼𝗺 𝗦𝗵𝗼𝘁𝗶 𝘃𝗶𝗱𝗲𝗼, 𝗽𝗹𝗲𝗮𝘀𝗲 𝘄𝗮𝗶𝘁...", event.threadID, event.messageID);
 
-  if (!prompt) {
-    return api.sendMessage(
-      "❓ Please provide a question to ask Gemini.\n\nUsage: gemini What is love?",
-      threadID,
-      messageID
-    );
-  }
+        // API call
+        const response = await axios.get('https://shoti.fbbot.org/api/get-shoti?type=video', {
+            headers: {
+                apikey: '$shoti-54c9a5966a',
+            },
+        });
 
-  try {
-    // Fetch from the Gemini API
-    const res = await axios.get("https://urangkapolka.vercel.app/api/gemink", {
-      params: { prompt }
-    });
+        const data = response.data?.result;
+        if (!data || !data.content) {
+            return api.sendMessage('❌ 𝗙𝗮𝗶𝗹𝗲𝗱 𝘁𝗼 𝗳𝗲𝘁𝗰𝗵 𝗮 𝗦𝗵𝗼𝘁𝗶 𝘃𝗶𝗱𝗲𝗼. 𝗣𝗹𝗲𝗮𝘀𝗲 𝘁𝗿𝘆 𝗮𝗴𝗮𝗶𝗻 𝗹𝗮𝘁𝗲𝗿.', event.threadID, event.messageID);
+        }
 
-    const answer = res.data?.response;
-    if (!answer) {
-      return api.sendMessage(
-        "⚠️ No response received from Gemini. Try again later.",
-        threadID,
-        messageID
-      );
+        const fileName = `${event.messageID}.mp4`;
+        const filePath = path.join(__dirname, fileName);
+
+        const downloadResponse = await axios({
+            method: 'GET',
+            url: data.content,
+            responseType: 'stream',
+        });
+
+        const writer = fs.createWriteStream(filePath);
+        downloadResponse.data.pipe(writer);
+
+        writer.on('finish', async () => {
+            api.sendMessage({
+                body: '🎥 𝗛𝗲𝗿𝗲’𝘀 𝘆𝗼𝘂𝗿 𝗿𝗮𝗻𝗱𝗼𝗺 𝗦𝗵𝗼𝘁𝗶 𝘃𝗶𝗱𝗲𝗼!',
+                attachment: fs.createReadStream(filePath)
+            }, event.threadID, () => {
+                fs.unlinkSync(filePath); // Cleanup
+            }, event.messageID);
+        });
+
+        writer.on('error', () => {
+            api.sendMessage('🚫 𝗘𝗿𝗿𝗼𝗿 𝗱𝗼𝘄𝗻𝗹𝗼𝗮𝗱𝗶𝗻𝗴 𝘁𝗵𝗲 𝘃𝗶𝗱𝗲𝗼. 𝗣𝗹𝗲𝗮𝘀𝗲 𝘁𝗿𝘆 𝗮𝗴𝗮𝗶𝗻.', event.threadID, event.messageID);
+        });
+
+    } catch (error) {
+        console.error('Error fetching Shoti video:', error);
+        api.sendMessage('🚫 𝗘𝗿𝗿𝗼𝗿 𝗳𝗲𝘁𝗰𝗵𝗶𝗻𝗴 𝗦𝗵𝗼𝘁𝗶 𝘃𝗶𝗱𝗲𝗼. 𝗧𝗿𝘆 𝗮𝗴𝗮𝗶𝗻 𝗹𝗮𝘁𝗲𝗿.', event.threadID, event.messageID);
     }
-
-    // Trim if too long
-    const maxLen = 2000;
-    const output = answer.length > maxLen ? answer.slice(0, maxLen) + "..." : answer;
-
-    return api.sendMessage(
-      `🤖 𝗚𝗲𝗺𝗶𝗻𝗶 𝗥𝗲𝘀𝗽𝗼𝗻𝘀𝗲:\n\n${output}`,
-      threadID,
-      messageID
-    );
-  } catch (err) {
-    console.error("[gemini.js] API Error:", err.response?.data || err.message);
-    return api.sendMessage(
-      "🚫 Failed to reach Gemini API. Please try again later.",
-      threadID,
-      messageID
-    );
-  }
 };

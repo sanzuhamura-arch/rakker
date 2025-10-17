@@ -1,26 +1,52 @@
-const axios = require('axios');
+let isReactEnabled = false;
 
-let emoji = {};
+const emojiRegex = /[\uD83C-\uDBFF\uDC00-\uDFFF]+/g;
 
-emoji["config"] = {
-  name: "autoreact",
-  version: "69",
-  description: "react based the text message"
+function extractEmojis(message) {
+  if (!message) return null;
+  const match = message.match(emojiRegex);
+  return match ? match[0] : null;
+}
+
+module.exports.config = {
+  name: "react",
+  version: "1.0",
+  role: 0,
+  description: `Turn on/off automatic reaction`,
+  hasPermission: 0,
+  usePrefix: false,
+  commandCategory: 'system',
+  usages: 'react [on/off]',
+  hasPrefix: false,
+  usage: '{pn} on/off',
+  cooldowns: 5,
 };
 
-emoji["handleEvent"] = async function ({ api, event }) {
-  if (event.body) {
-    const text = event.body;
-    try {
-      const response = await axios.get(`https://hercai.onrender.com/v3/hercai?question=can you only response only emoji based on the context and badwords is valid to send the emoji only and based on this words > ${encodeURIComponent(text)}`);
-      const { reply } = response.data;
+module.exports.handleEvent = async ({ api, event, args }) => {
+  try {
+    const message = event.body;
+    const emojis = extractEmojis(message);
 
-      if (reply && /[\u{1F600}-\u{1F64F}\u{2700}-\u{27BF}\u{1F680}-\u{1F6FF}\u{1F300}-\u{1F5FF}\u{1F1E0}-\u{1F1FF}]/u.test(reply)) {
-        api.setMessageReaction(reply, event.messageID, () => {}, true);
-      }
-    } catch (error) {
+    if (isReactEnabled && emojis) {
+      api.setMessageReaction(emojis, event.messageID, () => {}, true);
     }
+  } catch (error) {
+    console.error(error);
   }
 };
 
-module.exports = emoji;
+module.exports.run = async ({ api, event, args }) => {
+  try {
+    if (args[0] === 'on') {
+      isReactEnabled = true;
+      api.sendMessage('The react function is now enabled for new messages.', event.threadID, event.messageID);
+    } else if (args[0] === 'off') {
+      isReactEnabled = false;
+      api.sendMessage('The react function has been disabled for new messages.', event.threadID, event.messageID);
+    } else {
+      api.sendMessage('Incorrect syntax', event.threadID, event.messageID);
+    }
+  } catch (error) {
+    console.error(error);
+  }
+};

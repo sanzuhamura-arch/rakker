@@ -5,7 +5,6 @@ module.exports.config = {
   version: "9",
   role: 0,
   hasPrefix: false,
-  credits: "Cliff", 
   description: "AI powered by Opera browser",
   aliases: ["Aria"],
   cooldowns: 0,

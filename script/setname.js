@@ -61,22 +61,21 @@ module.exports.run = async function ({ api, event, args }) {
     let success = 0;
     let failed = 0;
 
-    for (const uid of members) {
-      try {
-        await new Promise((resolve, reject) => {
-          api.changeNickname(nickname, threadID, uid, (err) => {
-            if (err) return reject(err);
-            resolve();
-          });
+    function setOne(uid) {
+      return new Promise((resolve) => {
+        api.changeNickname(nickname, threadID, uid, (err) => {
+          if (err) {
+            failed++;
+          } else {
+            success++;
+          }
+          resolve();
         });
-        success++;
-      } catch (e) {
-        failed++;
-      }
-
-      // maliit na delay para maiwasan ang rate-limit
-      await new Promise((r) => setTimeout(r, 1500));
+      });
     }
+
+    // lahat sabay-sabay, walang delay/interval
+    await Promise.all(members.map(setOne));
 
     return api.sendMessage(
       `✅ Tapos na!\n` +

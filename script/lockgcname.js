@@ -1,129 +1,71 @@
 const fs = require("fs");
 const path = require("path");
 
-const FILE = path.join(__dirname, "..", "data", "lockedNames.json");
+const dbPath = path.join(__dirname, "..", "data", "locked_gc.json");
 
-function loadLocks() {
+function getLockedData() {
+  const dir = path.dirname(dbPath);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  if (!fs.existsSync(dbPath)) fs.writeFileSync(dbPath, "{}", "utf8");
   try {
-    if (!fs.existsSync(FILE)) {
-      fs.mkdirSync(path.dirname(FILE), { recursive: true });
-      fs.writeFileSync(FILE, "{}");
-    }
-    return JSON.parse(fs.readFileSync(FILE, "utf8"));
-  } catch (e) {
+    return JSON.parse(fs.readFileSync(dbPath, "utf8"));
+  } catch {
     return {};
   }
 }
 
-function saveLocks(data) {
-  fs.writeFileSync(FILE, JSON.stringify(data, null, 2));
+function saveLockedData(data) {
+  fs.writeFileSync(dbPath, JSON.stringify(data, null, 2), "utf8");
 }
 
 module.exports.config = {
   name: "lockgcname",
-  aliases: ["lockname", "namelock"],
   version: "1.0.0",
-  hasPermission: 1, // baguhin depende sa permission system ng bot mo
-  credits: "Sinzu",
-  description: "Nag-lo-lock ng group name, ibabalik agad kapag pinalitan.",
-  commandCategory: "admin",
-  usages: "[on/off] [pangalan]",
+  hasPermission: 1, // Admin only
+  credits: "sinzu",
+  description: "I-lock o i-unlock ang pangalan ng Group Chat upang hindi mapalitan ng iba",
+  usePrefix: true,
+  commandCategory: "Admin",
+  usages: "!lockgcname on [Custom Name] | !lockgcname off",
   cooldowns: 5
 };
 
-module.exports.run = async function ({ api, event, args }) {
-  const threadID = event.threadID;
-  const messageID = event.messageID;
-  const senderID = event.senderID;
-  const locks = loadLocks();
+module.exports.run = async function({ api, event, args }) {
+  const { threadID, messageID } = event;
+  const lockedData = getLockedData();
+  const sub = args[0]?.toLowerCase();
 
-  // ── Admin-only check ──
-  const threadInfoForCheck = await new Promise((resolve) => {
-    api.getThreadInfo(threadID, (err, info) => resolve(err ? null : info));
-  });
-
-  const adminIDs = (threadInfoForCheck?.adminIDs || []).map((a) =>
-    typeof a === "object" ? a.id : a
-  );
-
-  if (!adminIDs.includes(senderID)) {
-    return api.sendMessage(
-      "❌ Group admins lang ang pwedeng gumamit ng command na ito.",
-      threadID,
-      messageID
-    );
+  if (sub === "off" || sub === "unlock") {
+    delete lockedData[threadID];
+    saveLockedData(lockedData);
+    return api.sendMessage("🔓 [ UNLOCKED ] Naka-unlock na ang GC Name. Malaya na itong mapapalitan ng mga miyembro.", threadID, messageID);
   }
 
-  const sub = (args[0] || "").toLowerCase();
-
-  // ── lockgcname off — i-unlock ──
-  if (sub === "off") {
-    delete locks[threadID];
-    saveLocks(locks);
-    return api.sendMessage("🔓 Na-unlock na ang pangalan ng group.", threadID, messageID);
-  }
-
-  // ── lockgcname on [pangalan] — i-lock sa binigay na pangalan ──
-  // ── lockgcname [pangalan] — i-lock din, shortcut ──
-  let lockedName;
-  if (sub === "on") {
-    lockedName = args.slice(1).join(" ");
-  } else {
-    lockedName = args.join(" ");
-  }
-
-  if (!lockedName) {
-    // walang binigay na pangalan, gamitin yung current group name
-    api.getThreadInfo(threadID, (err, info) => {
-      if (err || !info) {
-        return api.sendMessage("❌ Hindi makuha ang current group name.", threadID, messageID);
+  if (sub === "on" || sub === "lock") {
+    let desiredName = args.slice(1).join(" ");
+    if (!desiredName) {
+      try {
+        const threadInfo = await api.getThreadInfo(threadID);
+        desiredName = threadInfo.threadName || "Sanzu Official GC";
+      } catch {
+        desiredName = "Sanzu Official GC";
       }
-      lockedName = info.threadName || "Group Chat";
-      locks[threadID] = lockedName;
-      saveLocks(locks);
-      return api.sendMessage(
-        `🔒 Na-lock ang pangalan ng group sa: "${lockedName}"`,
-        threadID,
-        messageID
-      );
+    }
+
+    lockedData[threadID] = {
+      name: desiredName,
+      locked: true
+    };
+    saveLockedData(lockedData);
+
+    // Set thread name immediately
+    api.setTitle(desiredName, threadID, (err) => {
+      if (err) console.error("Error setting title:", err);
     });
-    return;
+
+    return api.sendMessage(`🔒 [ GC NAME LOCKED ]\n\nMatagumpay na na-lock ang pangalan ng GC bilang:\n👉 "${desiredName}"\n\nKapag may nagpalit nito na hindi authorized, awtomatiko itong ibabalik ni Sanzu AI Bot!`, threadID, messageID);
   }
 
-  locks[threadID] = lockedName;
-  saveLocks(locks);
-
-  api.setTitle(lockedName, threadID, (err) => {
-    if (err) console.error("Error sa pag-set ng title:", err);
-  });
-
-  return api.sendMessage(
-    `🔒 Na-lock ang pangalan ng group sa: "${lockedName}"`,
-    threadID,
-    messageID
-  );
+  return api.sendMessage("💡 Gamitin:\n• !lockgcname on [Pangalan] - I-lock ang pangalan ng GC\n• !lockgcname off - I-unlock ang GC", threadID, messageID);
 };
-
-// ── Passive listener: babantayan ang pagbabago ng group name ──
-module.exports.handleEvent = async function ({ api, event }) {
-  if (event.logMessageType !== "log:thread-name") return;
-
-  const threadID = event.threadID;
-  const locks = loadLocks();
-  const lockedName = locks[threadID];
-
-  if (!lockedName) return; // walang lock sa group na ito
-
-  const newName = event.logMessageData?.name;
-  if (newName === lockedName) return; // walang binago, tama pa rin
-
-  // ibalik agad sa locked name
-  api.setTitle(lockedName, threadID, (err) => {
-    if (err) console.error("Error sa pag-restore ng group name:", err);
-  });
-
-  api.sendMessage(
-    `🔒 Naka-lock ang pangalan ng group na ito. Ibinalik sa: "${lockedName}"`,
-    threadID
-  );
-};
+module.exports.onStart = module.exports.run;

@@ -3,10 +3,10 @@ const path = require("path");
 
 module.exports.config = {
   name: "sleeping",
-  version: "2.0.0",
+  version: "3.0.0",
   hasPermission: 0,
   credits: "you",
-  description: "Toggle sleeping mode autoreply on/off — nagre-reply ng 'ops... ZzZzZzZzZ' sa lahat ng magmemessage. Persistent, hindi mawawala kahit mag-restart ang bot.",
+  description: "Toggle sleeping mode autoreply on/off — random na 'sleeping' themed reply sa bawat message. Persistent at kayang sumabay kahit mabilis magmessage ang mga tao.",
   commandCategory: "fun",
   usages: "[on/off]",
   cooldowns: 3,
@@ -35,10 +35,9 @@ function saveThreads(threadsSet) {
   }
 }
 
-// Load agad pagka-start ng bot, para live na agad ang mga naka-ON na thread dati
 let sleepingThreads = loadThreads();
 
-// Sleeping-themed lines lang — light, walang insults na personal o mean
+// Malaking listahan ng random sleeping-themed replies — mas marami, mas hindi paulit-ulit
 const sleepingReplies = [
   "ops... ZzZzZzZzZ 😴",
   "ZzZzZzZzZ... huh? ano na naman?",
@@ -48,7 +47,33 @@ const sleepingReplies = [
   "ZzZzZzZzZ... (di talaga nakikinig)",
   "ops ano raw? ZzZzZzZzZ",
   "ZzZzZzZzZ 😴 paalam sa mundo saglit.",
+  "..zzz.. ano? gising na ba tayo?",
+  "ops medyo antok pa ako, ZzZzZzZzZ 💤",
+  "ZzZzZzZzZ 😪 5 minutes nalang...",
+  "hmm? ah wag mo lang pansinin, ZzZzZzZzZ",
+  "ops di ko na-catch yun, ZzZzZzZzZ",
+  "ZzZzZzZzZ... (snore) ...ZzZzZzZzZ",
+  "sandali lang, patapusin mo muna ako matulog 😴",
+  "ops half-asleep pa ako, ulitin mo?",
+  "ZzZzZzZzZ 💤 tara tulog na tayong lahat",
+  "ano yun? ah okay, ZzZzZzZzZ...",
+  "ops nakaidlip ako bigla, ZzZzZzZzZ",
+  "ZzZzZzZzZ... busy pa ako sa panaginip",
 ];
+
+// Kumuha ng random reply na hindi parehas sa huling isinend, para hindi kagad
+// paulit-ulit kahit mabilis magmessage — mas natural ang randomness
+const lastReplyByThread = new Map();
+
+function getRandomReply(threadID) {
+  let reply;
+  const lastReply = lastReplyByThread.get(threadID);
+  do {
+    reply = sleepingReplies[Math.floor(Math.random() * sleepingReplies.length)];
+  } while (reply === lastReply && sleepingReplies.length > 1);
+  lastReplyByThread.set(threadID, reply);
+  return reply;
+}
 
 module.exports.run = async function ({ api, event, args }) {
   const { threadID, messageID } = event;
@@ -78,13 +103,16 @@ module.exports.run = async function ({ api, event, args }) {
   );
 };
 
-module.exports.handleEvent = async function ({ api, event }) {
+// Hindi ito naka-await sa sendMessage — kaya hindi nagba-block ang susunod na
+// event kahit sabay-sabay o sunod-sunod na magmessage ang mga tao sa GC.
+// Bawat message, agad kumukuha ng sagot at nagpapadala nang independent sa isa't isa.
+module.exports.handleEvent = function ({ api, event }) {
   const { threadID, senderID, body } = event;
 
   if (!sleepingThreads.has(threadID)) return;
   if (!body) return;
   if (senderID === api.getCurrentUserID()) return;
 
-  const randomReply = sleepingReplies[Math.floor(Math.random() * sleepingReplies.length)];
+  const randomReply = getRandomReply(threadID);
   api.sendMessage(randomReply, threadID);
 };

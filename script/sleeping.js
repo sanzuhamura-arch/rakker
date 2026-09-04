@@ -3,10 +3,10 @@ const path = require("path");
 
 module.exports.config = {
   name: "sleeping",
-  version: "3.0.0",
+  version: "4.0.0",
   hasPermission: 0,
   credits: "you",
-  description: "Toggle sleeping mode autoreply on/off — random na 'sleeping' themed reply sa bawat message. Persistent at kayang sumabay kahit mabilis magmessage ang mga tao.",
+  description: "Toggle sleeping mode autoreply on/off — 'Uncle Dags mode' na random na street/rap-vibe na reply sa bawat message. Persistent at kayang sumabay kahit mabilis magmessage ang mga tao.",
   commandCategory: "fun",
   usages: "[on/off]",
   cooldowns: 3,
@@ -37,28 +37,29 @@ function saveThreads(threadsSet) {
 
 let sleepingThreads = loadThreads();
 
-// Malaking listahan ng random sleeping-themed replies — mas marami, mas hindi paulit-ulit
+// "Uncle Dags mode" — orihinal na mga linya na street/rap-vibe ang dating,
+// HINDI kopya ng totoong lyrics ni Uncle Dags (copyrighted iyon, di pwede i-reproduce)
 const sleepingReplies = [
-  "ops... ZzZzZzZzZ 😴",
-  "ZzZzZzZzZ... huh? ano na naman?",
-  "ops, natulog ako saglit, ZzZzZzZzZ",
-  "ZzZzZzZzZ 💤 huwag mo akong gisingin.",
-  "ops sorry, tulog mode pa ako ZzZzZzZzZ",
-  "ZzZzZzZzZ... (di talaga nakikinig)",
-  "ops ano raw? ZzZzZzZzZ",
-  "ZzZzZzZzZ 😴 paalam sa mundo saglit.",
-  "..zzz.. ano? gising na ba tayo?",
-  "ops medyo antok pa ako, ZzZzZzZzZ 💤",
-  "ZzZzZzZzZ 😪 5 minutes nalang...",
-  "hmm? ah wag mo lang pansinin, ZzZzZzZzZ",
-  "ops di ko na-catch yun, ZzZzZzZzZ",
-  "ZzZzZzZzZ... (snore) ...ZzZzZzZzZ",
-  "sandali lang, patapusin mo muna ako matulog 😴",
-  "ops half-asleep pa ako, ulitin mo?",
-  "ZzZzZzZzZ 💤 tara tulog na tayong lahat",
-  "ano yun? ah okay, ZzZzZzZzZ...",
-  "ops nakaidlip ako bigla, ZzZzZzZzZ",
-  "ZzZzZzZzZ... busy pa ako sa panaginip",
+  "angas lods 🥷",
+  "tol, mag-relax ka lang diyan.",
+  "solid ka pre, keep it real.",
+  "ayan na naman, laging may drama.",
+  "chill lang tayo diyan, walang gulo.",
+  "sige lods, respeto lang sa isa't isa.",
+  "araw-araw grind, walang tulugan.",
+  "wag kang praning, ayos lang tayo.",
+  "one time lang 'to, mag-ingat ka.",
+  "totoo lang, walang paligoy-ligoy.",
+  "steady lang, di kailangan mag-rush.",
+  "boss moves lang dito, walang chaka.",
+  "real talk, ganern lang buhay.",
+  "kalma lods, may oras lahat.",
+  "ganito lang buhay, ituloy lang.",
+  "walang kupas, sige lang.",
+  "salamat sa pagdaan, ingat lods.",
+  "steady lang ang takbo natin dito.",
+  "diretso lang, walang paikot-ikot.",
+  "respeto muna bago lahat.",
 ];
 
 // Kumuha ng random reply na hindi parehas sa huling isinend, para hindi kagad
@@ -84,7 +85,7 @@ module.exports.run = async function ({ api, event, args }) {
     sleepingThreads.add(threadID);
     saveThreads(sleepingThreads);
     return api.sendMessage(
-      "😴 Naka-ON na ang sleeping mode dito, permanente ito hangga't hindi mo in-off — kahit mag-restart pa ang bot.",
+      "🥷 Naka-ON na ang Uncle Dags mode dito, permanente ito hangga't hindi mo in-off — kahit mag-restart pa ang bot.",
       threadID,
       messageID
     );
@@ -93,7 +94,7 @@ module.exports.run = async function ({ api, event, args }) {
   if (option === "off") {
     sleepingThreads.delete(threadID);
     saveThreads(sleepingThreads);
-    return api.sendMessage("🌙 Naka-OFF na ang sleeping mode.", threadID, messageID);
+    return api.sendMessage("🌙 Naka-OFF na ang Uncle Dags mode.", threadID, messageID);
   }
 
   return api.sendMessage(

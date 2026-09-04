@@ -1,3 +1,6 @@
+// Prefix: "/"
+const PREFIX = "/"; 
+
 module.exports.config = {
   name: "warreply",
   version: "1.0.0",
@@ -5,7 +8,7 @@ module.exports.config = {
   author: "Developer",
   description: "Auto-Reply Trash Talker sa bawat mag-chat",
   category: "war",
-  guide: "{p}warreply [on/off]",
+  guide: `${PREFIX}warreply [on/off]`,
   cooldowns: 5
 };
 
@@ -63,12 +66,11 @@ module.exports.onEvent = async function ({ api, event }) {
 
   const { threadID, senderID, body, type } = event;
 
-  // Wag basahin ang sariling chat ng bot at dapat text message lang
   if (type !== "message" || !body || senderID === api.getCurrentUserID()) return;
 
-  // Iwasan ma-trigger sa off/command
+  // Iwasan ma-trigger sa off/command gamit ang / prefix
   const text = body.trim().toLowerCase();
-  if (text === "off" || text.includes("warreply")) return;
+  if (text === "off" || text.includes("/warreply")) return;
 
   const randomTrash = trashTalkReplies[Math.floor(Math.random() * trashTalkReplies.length)];
 

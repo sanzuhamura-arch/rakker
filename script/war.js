@@ -1,103 +1,124 @@
 module.exports.config = {
   name: "war",
-  version: "1.0.0",
-  role: 2, // 2 = Admin / Operator Only
-  author: "Developer",
-  description: "GC Name spammer at Auto-Reply Trash Talker",
-  category: "war",
-  guide: "{p}war [on/off] - I-on o i-off ang war mode.",
-  cooldowns: 5
+  aliases: ["war1", "off"],
+  version: "1.2.0",
+  hasPermission: 1,
+  credits: "Sinzu",
+  description: "Mabilis na auto-reply at mabilis na GC Name trashtalk changer.",
+  commandCategory: "admin",
+  usages: "[war / war1 <gc name> / off]",
+  cooldowns: 0
 };
 
-// Listahan ng mga trashtalk lines
-const trashTalkList = [
-  "Umiyak ka na lang dito haha!",
-  "Ano ba yan, walang maipaglaban?",
-  "Basura pa rin hanggang ngayon ah!",
-  "Matulog ka na lang, hindi mo kaya 'to.",
-  "Bakit ka nandito? Walang naghahanap sa'yo!",
-  "Chat ka pa, wala namang may paki!"
+global.warState = global.warState || {
+  allAutoReply: {},
+  gcNameWar: {}
+};
+
+const trashtalkLines = [
+  "Bakit ka tahimik? Labas mo tapang mo!",
+  "Iyakin ka pala eh, konting pikit lang palag ka na?",
+  "Hanggang diyan ka lang ba? Isip ka muna!",
+  "Walang kwenta kausap, puro hangin lang!",
+  "Baka gusto mong mag-review muna bago ka lumaban!",
+  "Tulog ka na lang, umiiyak ka na naman eh!",
+  "Ganyan ba talaga kapag mahina? Puro palusot!",
+  "Masyado kang mabagal, mag-type ka naman!",
+  "Palag pa! Wag kang tatalikod dito!"
 ];
 
-// Global state para hindi mawala kapag nagre-reply
-global.warBotState = global.warBotState || {
-  active: false,
-  interval: null,
-  threadID: null
-};
+module.exports.run = async function ({ api, event, args }) {
+  const { threadID, messageID, senderID } = event;
 
-// 1. COMMAND EXECUTOR (/war O /war off)
-module.exports.onStart = async function ({ api, event, args, message, role }) {
-  const { threadID } = event;
+  // ── Admin-only check ──
+  const threadInfo = await new Promise((resolve) => {
+    api.getThreadInfo(threadID, (err, info) => resolve(err ? null : info));
+  });
 
-  // Extra check kung Admin
-  if (role < 2) {
-    return message.reply("⚠️ Admin lang ang pwedeng gumamit ng war command!");
+  const adminIDs = (threadInfo?.adminIDs || []).map((a) =>
+    typeof a === "object" ? a.id : a
+  );
+
+  if (!adminIDs.includes(senderID)) {
+    return api.sendMessage(
+      "❌ Group admins lang ang pwedeng gumamit nito.",
+      threadID,
+      messageID
+    );
   }
 
-  const action = args[0] ? args[0].toLowerCase() : "";
+  const commandUsed = event.body.trim().split(" ")[0].toLowerCase().replace("/", "");
 
-  // ON COMMAND (/war o /war on)
-  if (action === "on" || action === "start" || !action) {
-    if (global.warBotState.active) {
-      return message.reply("🔥 War mode is ALREADY ACTIVE in this group!");
+  // ── COMMAND: /off ──
+  if (commandUsed === "off" || args[0] === "off") {
+    global.warState.allAutoReply[threadID] = false;
+    global.warState.gcNameWar[threadID] = false;
+
+    return api.sendMessage(
+      "🛑 [WAR SYSTEM] OFF NA LAHAT.",
+      threadID,
+      messageID
+    );
+  }
+
+  // ── COMMAND: /war1 (Fast GC Name Changer) ──
+  if (commandUsed === "war1" || args[0] === "1") {
+    const baseName = args.join(" ");
+
+    if (!baseName) {
+      return api.sendMessage(
+        "❌ Maglagay ng GC Name.\nHalimbawa: /war1 SINZU GANG",
+        threadID,
+        messageID
+      );
     }
 
-    global.warBotState.active = true;
-    global.warBotState.threadID = threadID;
+    if (global.warState.gcNameWar[threadID]) {
+      return api.sendMessage("⚠️ Naka-ON na ang GC Name War! Gamitin ang /off para ihinto.", threadID, messageID);
+    }
 
-    message.reply("🔥 WAR MODE ACTIVATED! Sisimulan na ang GC Name Trash-Talk at Auto-Reply...");
+    global.warState.gcNameWar[threadID] = true;
+    api.sendMessage(`⚡ [FAST GC NAME WAR ACTIVATED] Mode: ${baseName}`, threadID);
 
-    let counter = 0;
-    global.warBotState.interval = setInterval(() => {
-      if (!global.warBotState.active) return;
+    let index = 0;
+    
+    // Fast Loop Execution
+    const runFastNameChange = async () => {
+      while (global.warState.gcNameWar[threadID]) {
+        const line = trashtalkLines[index % trashtalkLines.length];
+        const newTitle = `${baseName} - ${line}`;
 
-      const randomPhrase = trashTalkList[Math.floor(Math.random() * trashTalkList.length)];
-      const newGCName = `${randomPhrase} [${counter++}]`;
+        api.setTitle(newTitle, threadID, () => {});
+        index++;
 
-      api.setTitle(newGCName, threadID, (err) => {
-        if (err) console.error("Failed to change GC Name:", err);
-      });
-    }, 3000); // Nagpapalit ng GC Name bawat 3 seconds
+        // 100ms interval para sa napakabilis na palit ng name
+        await new Promise((res) => setTimeout(res, 100)); 
+      }
+    };
 
+    runFastNameChange();
     return;
   }
 
-  // OFF COMMAND (/war off O tinype lang ang "off")
-  if (action === "off" || action === "stop") {
-    if (!global.warBotState.active) {
-      return message.reply("Naka-OFF naman na ang War Mode.");
-    }
+  // ── COMMAND: /war (Fast Auto-Reply sa KAHIT SINO) ──
+  global.warState.allAutoReply[threadID] = true;
 
-    global.warBotState.active = false;
-    clearInterval(global.warBotState.interval);
-    global.warBotState.interval = null;
-    global.warBotState.threadID = null;
-
-    return message.reply("🛑 WAR MODE DEACTIVATED! Huminto na ang spam.");
-  }
+  return api.sendMessage(
+    "⚡ [FAST ALL-CHAT WAR ACTIVATED] Bawat mag-chat, aawtuhin agad!",
+    threadID,
+    messageID
+  );
 };
 
-// 2. AUTO-REPLY ON ANY CHAT (Iniiwasang ma-trigger pag nka-off)
-module.exports.onChat = async function ({ api, event }) {
-  if (!global.warBotState || !global.warBotState.active) return;
+// ── Instant Listener for Auto-Reply ──
+module.exports.handleEvent = async function ({ api, event }) {
+  const { threadID, senderID, body, messageID } = event;
 
-  const { threadID, senderID, body, type } = event;
+  if (!body || senderID === api.getCurrentUserID()) return;
 
-  // Huwag sagutin kung galing sa sarili ng bot o walang text content
-  if (type !== "message" || !body || senderID === api.getCurrentUserID()) return;
-
-  // Huwag basahin ang "off" o "/war" para hindi ma-trashtalk ang admin habang nag-co-command
-  const text = body.trim().toLowerCase();
-  if (text === "off" || text.includes("/war")) return;
-
-  const randomTrash = trashTalkList[Math.floor(Math.random() * trashTalkList.length)];
-
-  api.sendMessage({
-    body: randomTrash,
-    mentions: [{
-      tag: `@${senderID}`,
-      id: senderID
-    }]
-  }, threadID);
+  if (global.warState.allAutoReply[threadID]) {
+    const randomLine = trashtalkLines[Math.floor(Math.random() * trashtalkLines.length)];
+    // Walang delay, rekta send agad sa message reply
+    api.sendMessage(randomLine, threadID, messageID);
+  }
 };

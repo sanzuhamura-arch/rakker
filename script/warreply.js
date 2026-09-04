@@ -1,14 +1,11 @@
-// Prefix: "/"
-const PREFIX = "/"; 
-
 module.exports.config = {
   name: "warreply",
   version: "1.0.0",
-  role: 2, // 2 = Admin Only
+  role: 2, // Admin Only
   author: "Developer",
-  description: "Auto-Reply Trash Talker sa bawat mag-chat",
+  description: "Auto Reply Trash Talker",
   category: "war",
-  guide: `${PREFIX}warreply [on/off]`,
+  guide: "/warreply [on/off]",
   cooldowns: 5
 };
 
@@ -22,63 +19,45 @@ const trashTalkReplies = [
 ];
 
 global.warReplyState = global.warReplyState || {
-  active: false,
-  threadID: null
+  active: false
 };
 
-module.exports.onStart = async function ({ api, event, args, message, role }) {
-  const { threadID } = event;
-
-  if (role < 2) {
-    return message.reply("⚠️ Admin lang ang pwedeng mag-control ng Auto-Reply war!");
-  }
-
+module.exports.onStart = async function ({ args, message }) {
   const action = args[0] ? args[0].toLowerCase() : "";
 
-  // ON COMMAND (/warreply o /warreply on)
   if (action === "on" || action === "start" || !action) {
     if (global.warReplyState.active) {
-      return message.reply("🔥 Auto-Reply Trash Talker is ALREADY ACTIVE!");
+      return message.reply("🔥 Active na ang Auto-Reply!");
     }
 
     global.warReplyState.active = true;
-    global.warReplyState.threadID = threadID;
-
-    return message.reply("🔥 Auto-Reply Trash Talker ACTIVATED! Titirahin ang bawat mag-chat...");
+    return message.reply("🔥 Auto-Reply ACTIVATED!");
   }
 
-  // OFF COMMAND (/warreply off)
   if (action === "off" || action === "stop") {
     if (!global.warReplyState.active) {
-      return message.reply("Naka-OFF naman na ang Auto-Reply Trash Talker.");
+      return message.reply("Naka-OFF na ang Auto-Reply.");
     }
 
     global.warReplyState.active = false;
-    global.warReplyState.threadID = null;
-
-    return message.reply("🛑 Auto-Reply Trash Talker DEACTIVATED!");
+    return message.reply("🛑 Auto-Reply DEACTIVATED!");
   }
 };
 
-// Auto-Reply Listener
-module.exports.onEvent = async function ({ api, event }) {
+module.exports.onChat = async function ({ api, event }) {
   if (!global.warReplyState || !global.warReplyState.active) return;
 
   const { threadID, senderID, body, type } = event;
 
   if (type !== "message" || !body || senderID === api.getCurrentUserID()) return;
 
-  // Iwasan ma-trigger sa off/command gamit ang / prefix
   const text = body.trim().toLowerCase();
-  if (text === "off" || text.includes("/warreply")) return;
+  if (text === "off" || text.includes("warreply")) return;
 
   const randomTrash = trashTalkReplies[Math.floor(Math.random() * trashTalkReplies.length)];
 
   api.sendMessage({
     body: randomTrash,
-    mentions: [{
-      tag: `@${senderID}`,
-      id: senderID
-    }]
+    mentions: [{ tag: `@${senderID}`, id: senderID }]
   }, threadID);
 };

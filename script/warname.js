@@ -1,14 +1,11 @@
-// Prefix: "/"
-const PREFIX = "/"; 
-
 module.exports.config = {
   name: "warname",
   version: "1.0.0",
-  role: 2, // 2 = Admin Only
+  role: 2, // Admin Only
   author: "Developer",
   description: "Continuous GC Name Spammer",
   category: "war",
-  guide: `${PREFIX}warname [on/off]`,
+  guide: "/warname [on/off]",
   cooldowns: 5
 };
 
@@ -23,29 +20,20 @@ const trashTalkNames = [
 
 global.warNameState = global.warNameState || {
   active: false,
-  interval: null,
-  threadID: null
+  interval: null
 };
 
-module.exports.onStart = async function ({ api, event, args, message, role }) {
+module.exports.onStart = async function ({ api, event, args, message }) {
   const { threadID } = event;
-
-  if (role < 2) {
-    return message.reply("⚠️ Admin lang ang pwedeng mag-control ng GC Name spammer!");
-  }
-
   const action = args[0] ? args[0].toLowerCase() : "";
 
-  // ON COMMAND (/warname o /warname on)
   if (action === "on" || action === "start" || !action) {
     if (global.warNameState.active) {
-      return message.reply("🔥 GC Name Spammer is ALREADY ACTIVE!");
+      return message.reply("🔥 Active na ang GC Name Spammer!");
     }
 
     global.warNameState.active = true;
-    global.warNameState.threadID = threadID;
-
-    message.reply("🔥 GC Name Spammer ACTIVATED! Nagsisimula na...");
+    message.reply("🔥 GC Name Spammer ACTIVATED!");
 
     let counter = 0;
     global.warNameState.interval = setInterval(() => {
@@ -55,23 +43,21 @@ module.exports.onStart = async function ({ api, event, args, message, role }) {
       const newGCName = `${randomPhrase} [${counter++}]`;
 
       api.setTitle(newGCName, threadID, (err) => {
-        if (err) console.error("Failed to change GC Name:", err);
+        if (err) console.error("Error setting title:", err);
       });
     }, 3000);
 
     return;
   }
 
-  // OFF COMMAND (/warname off o "off")
   if (action === "off" || action === "stop") {
     if (!global.warNameState.active) {
-      return message.reply("Naka-OFF naman na ang GC Name Spammer.");
+      return message.reply("Naka-OFF na ang GC Name Spammer.");
     }
 
     global.warNameState.active = false;
     clearInterval(global.warNameState.interval);
     global.warNameState.interval = null;
-    global.warNameState.threadID = null;
 
     return message.reply("🛑 GC Name Spammer DEACTIVATED!");
   }

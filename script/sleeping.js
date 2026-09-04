@@ -1,10 +1,9 @@
 module.exports.config = {
   name: "sleeping",
-  version: "1.0",
-  hasPrefix: true,
-  usePrefix: true,
+  version: "1.0.0",
+  hasPermission: 0,
   credits: "you",
-  description: "Toggle sleeping/teasing autoreply on/off — nangaasar pero light lang, walang bardagulan",
+  description: "Toggle sleeping mode autoreply on/off — nagre-reply ng 'ops... ZzZzZzZzZ' sa lahat ng magmemessage.",
   commandCategory: "fun",
   usages: "[on/off]",
   cooldowns: 3,
@@ -40,8 +39,9 @@ module.exports.run = async function ({ api, event, args }) {
     return api.sendMessage("🌙 Naka-OFF na ang sleeping mode.", threadID, messageID);
   }
 
+  const prefix = global.config?.PREFIX || "/";
   return api.sendMessage(
-    "Gamitin: sleeping on | sleeping off",
+    `Gamitin: ${prefix}sleeping on | ${prefix}sleeping off`,
     threadID,
     messageID
   );

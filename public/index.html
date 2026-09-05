@@ -1,138 +1,543 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>rakker tool🐝</title>
-    <meta name="description" content="Explore our AI Autobot messenger for personalized interactions and efficient task automation, enhancing your online experience.">
-    <meta property="og:image" content="https://i.imgur.com/Zvo9Wc0.jpeg">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@300;400;700&display=swap" rel="stylesheet">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="styles.css">
-    <link rel="icon" href="/image/home.png">
+<meta charset="UTF-8" />
+<title>GK SINZU TROLLERBOT</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    font-family: 'Courier New', Courier, monospace;
+    background: #05050a;
+    color: #e6e6f0;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* ===== Animated background ===== */
+  .bg-animated {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background: radial-gradient(circle at 20% 20%, #1a0b2e 0%, #05050a 55%),
+                radial-gradient(circle at 80% 70%, #2b0b3a 0%, transparent 60%);
+    overflow: hidden;
+  }
+  .bg-animated::before,
+  .bg-animated::after {
+    content: '';
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    top: -50%;
+    left: -50%;
+    background: conic-gradient(from 0deg, transparent, rgba(157, 78, 221, 0.08), transparent 30%);
+    animation: spin 18s linear infinite;
+  }
+  .bg-animated::after {
+    animation-duration: 26s;
+    animation-direction: reverse;
+    background: conic-gradient(from 90deg, transparent, rgba(0, 200, 255, 0.06), transparent 25%);
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .particle {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(200, 160, 255, 0.5);
+    filter: blur(1px);
+    animation: float linear infinite;
+  }
+  @keyframes float {
+    0%   { transform: translateY(0) translateX(0); opacity: 0; }
+    10%  { opacity: 0.8; }
+    90%  { opacity: 0.8; }
+    100% { transform: translateY(-110vh) translateX(20px); opacity: 0; }
+  }
+
+  /* ===== Layout ===== */
+  .navbar {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: rgba(10, 5, 20, 0.6);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid rgba(157, 78, 221, 0.25);
+  }
+  .navbar .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: #d6b3ff;
+  }
+  .navbar .brand .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #9d4edd;
+    box-shadow: 0 0 10px #9d4edd;
+    animation: pulse 1.6s infinite;
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(157,78,221,0.6); }
+    70% { box-shadow: 0 0 0 8px rgba(157,78,221,0); }
+    100% { box-shadow: 0 0 0 0 rgba(157,78,221,0); }
+  }
+  .navbar .menu-icon {
+    font-size: 20px;
+    color: #d6b3ff;
+    cursor: pointer;
+  }
+
+  .container {
+    position: relative;
+    z-index: 2;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 24px 18px 60px;
+  }
+
+  .title-card {
+    text-align: center;
+    padding: 20px 10px 10px;
+  }
+  .title-card h1 {
+    font-size: 22px;
+    letter-spacing: 2px;
+    background: linear-gradient(90deg, #d6b3ff, #9d4edd, #6a0dad);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 20px rgba(157,78,221,0.4);
+  }
+  .title-card p {
+    font-size: 11px;
+    color: #8a7ba0;
+    margin-top: 6px;
+    letter-spacing: 1px;
+  }
+
+  .avatar-frame {
+    width: 100%;
+    max-width: 320px;
+    margin: 18px auto;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid rgba(157, 78, 221, 0.4);
+    box-shadow: 0 0 25px rgba(157, 78, 221, 0.15);
+    position: relative;
+  }
+  .avatar-frame img {
+    width: 100%;
+    display: block;
+    filter: grayscale(30%) contrast(1.05);
+  }
+  .avatar-frame .scanline {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(157, 78, 221, 0.15) 50%,
+      transparent 100%
+    );
+    height: 40%;
+    animation: scan 3.5s ease-in-out infinite;
+  }
+  @keyframes scan {
+    0%   { top: -40%; }
+    100% { top: 100%; }
+  }
+
+  .intro-text {
+    font-size: 12px;
+    color: #b9a8d0;
+    text-align: center;
+    line-height: 1.6;
+    margin-bottom: 18px;
+  }
+
+  /* ===== Animated appstate input box ===== */
+  .appstate-wrapper {
+    position: relative;
+    padding: 3px;
+    border-radius: 14px;
+    background: linear-gradient(130deg, #9d4edd, #00d4ff, #ff2fd0, #9d4edd);
+    background-size: 400% 400%;
+    animation: borderFlow 4s ease infinite, wrapperPulse 2.5s ease-in-out infinite;
+    margin-bottom: 20px;
+  }
+  @keyframes borderFlow {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  @keyframes wrapperPulse {
+    0%, 100% { box-shadow: 0 0 12px rgba(157, 78, 221, 0.35); }
+    50%      { box-shadow: 0 0 28px rgba(0, 212, 255, 0.55); }
+  }
+
+  .appstate-inner {
+    position: relative;
+    background: #0a0714;
+    border-radius: 12px;
+    padding: 4px;
+    overflow: hidden;
+  }
+
+  /* Scanning light sweeping across the textarea, top to bottom, looping */
+  .appstate-inner::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 45%;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(0, 212, 255, 0.10) 45%,
+      rgba(157, 78, 221, 0.18) 50%,
+      rgba(0, 212, 255, 0.10) 55%,
+      transparent 100%
+    );
+    animation: appstateScan 3s linear infinite;
+    pointer-events: none;
+    z-index: 1;
+  }
+  @keyframes appstateScan {
+    0%   { top: -45%; }
+    100% { top: 100%; }
+  }
+
+  /* Blinking corner brackets, parang "targeting" HUD look */
+  .appstate-inner::after {
+    content: '● SECURE INPUT';
+    position: absolute;
+    top: 6px;
+    right: 12px;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: #00d4ff;
+    opacity: 0.7;
+    animation: blinkLabel 1.8s ease-in-out infinite;
+    z-index: 2;
+    pointer-events: none;
+  }
+  @keyframes blinkLabel {
+    0%, 100% { opacity: 0.3; }
+    50%      { opacity: 0.9; }
+  }
+
+  #json-data {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    min-height: 130px;
+    resize: vertical;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #e6e6f0;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 12px;
+    padding: 14px;
+    caret-color: #00d4ff;
+    transition: text-shadow 0.3s ease;
+  }
+  #json-data::placeholder {
+    color: #5f5578;
+    animation: placeholderFade 2.4s ease-in-out infinite;
+  }
+  @keyframes placeholderFade {
+    0%, 100% { opacity: 0.6; }
+    50%      { opacity: 1; }
+  }
+  #json-data:focus {
+    text-shadow: 0 0 6px rgba(0, 212, 255, 0.6);
+  }
+  /* Extra glow ring the moment the field is focused */
+  .appstate-wrapper:focus-within {
+    animation: borderFlow 1.6s ease infinite, wrapperPulse 1s ease-in-out infinite;
+  }
+
+  .section-block {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(157, 78, 221, 0.2);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .section-block h2 {
+    font-size: 12px;
+    color: #c9b6e6;
+    margin-bottom: 12px;
+    letter-spacing: 0.5px;
+    line-height: 1.5;
+  }
+
+  .btn {
+    display: inline-block;
+    width: 100%;
+    padding: 12px;
+    text-align: center;
+    border: none;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 13px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    color: #fff;
+    background: linear-gradient(90deg, #6a0dad, #9d4edd);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn:hover { box-shadow: 0 0 18px rgba(157,78,221,0.5); }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled {
+    background: #332844;
+    color: #6b5f80;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .text-input {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(157, 78, 221, 0.25);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: #e6e6f0;
+    font-family: inherit;
+    font-size: 13px;
+    outline: none;
+  }
+  .text-input:focus {
+    border-color: #9d4edd;
+    box-shadow: 0 0 10px rgba(157,78,221,0.3);
+  }
+  .text-input::placeholder { color: #5f5578; }
+
+  .agree-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 11px;
+    color: #a897c2;
+    margin-bottom: 18px;
+  }
+  .agree-row input {
+    margin-top: 2px;
+    accent-color: #9d4edd;
+  }
+
+  #result {
+    margin-top: 16px;
+    font-size: 12px;
+    text-align: center;
+    padding: 12px;
+    border-radius: 10px;
+    display: none;
+  }
+  #result.success {
+    background: rgba(61,220,132,0.1);
+    color: #3ddc84;
+    border: 1px solid rgba(61,220,132,0.3);
+    display: block;
+  }
+  #result.error {
+    background: rgba(255,90,90,0.1);
+    color: #ff7a7a;
+    border: 1px solid rgba(255,90,90,0.3);
+    display: block;
+  }
+
+  .footer {
+    text-align: center;
+    font-size: 10px;
+    color: #5f5578;
+    margin-top: 30px;
+    line-height: 1.8;
+  }
+  .footer span { color: #9d4edd; }
+</style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <a class="navbar-brand" href="#">
-          <img src="/image/home.png" alt="Home" style="width: 30px; height: auto;">
-        </a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse justify-content-end" id="navbarNav" style="margin-right: 70px;">
-            <ul class="navbar-nav">
-                <li class="nav-item active">
-                    <a class="nav-link" href="/">Home <span class="sr-only">(current)</span></a>
-                </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> Features </a>
-                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                        <a class="dropdown-item" href="/step_by_step_guide">Step-by-Step Guide</a>
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="https://zark-spam-share.onrender.com/">SpamShare-Tools</a>
-                        <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="https://my-portfolio-f9lz.onrender.com/">Developer</a>
-                    </div>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="online_user">Active</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="tos-privacy-policy">Terms and Conditions</a>
-                </li>
-            </ul>
-        </div>
-    </nav>
-    <div class="container">
-        <h1 class="col text-center" style="font-size: 20px; padding: 10px;">dinzu bot</h1><p style="font-size: 10px; text-align: center;">Version: 1.0.1</p>
-        <form id="json-form">
-            <div class="row">
-                <div class="col-md-12">
-                    <textarea id="json-data" class="form-control centered-textarea center-placeholder" placeholder=""></textarea>
-                </div>
-            </div>
-        </form>
-        <p style="margin-top: 15px; font-size: 12px; text-align: left;">Greetings! Begin by entering your cookie. Scroll down to see other features.</p>
-    </div>
 
-    <div class="container" id="listOfCommands">
-        <h1 style="font-size: 12px; padding: 10px;">Please choose your commands by tapping on the respective options.</h1>
-         <button class="btn btn-primary" onclick="selectAllCommands(); scrollToSection('listOfCommandsEvent');">SELECT ALL COMMANDS</button>
-    </div>
-    
-    <div class="container" id="listOfCommandsEvent">
-        <h1 style="font-size: 12px; padding: 10px;">Please choose your event commands by tapping on the respective options.</h1>
-        <button class="btn btn-primary" onclick="selectAllEvents(); scrollToSection('prefixOfCommands');">SELECT ALL EVENTS</button>
-    </div>
-    
-    <div class="container" id="prefixOfCommands">
-        <h1 style="font-size: 12px; padding: 10px;">Please provide a prefix (optional). If you choose not to, entering "non-prefix" will be considered as your input.</h1>
-        <input type="text" id="inputOfPrefix" placeholder="@, #, /, *,.">
-    </div>
-    
-    <div class="container" id="adminOfCommands">
-        <h1 style="font-size: 12px; padding: 10px;">Please provide an uid (optional). If you choose not to, entering "default" will be considered as your input.</h1>
-        <input type="text" id="inputOfAdmin" placeholder="Admin userID">
-    </div>
-    
-    <label style="font-size: 10px; display: flex; align-items: center; padding: 22px;">
-        <input type="checkbox" id="agreeCheckbox" style="margin-right: 10px;"> Checking this box certifies that I have read, understood, and agreed to the Terms and Conditions.
-    </label>
-    
-    <div class="col text-center">
-        <button class="btn btn-primary" onclick="State()" disabled id="submitButton" style="width: 100%">Submit</button>
-    </div>
-    
-    <div id="result" class="container text-center" style="display: none; font-size: 10px;"></div>
-    
-    <br><br>
-    
-    <div>
-        <br>
-        <button id="scrollUpBtn"><i class="fa-solid fa-angles-up"></i></button>
-        <div class="footer">
-            <p>© 2025 sincreations | All rights reserved.</p>
-            <p>Time: <span id="time"></span> | Ping: <span id="ping"></span></p>
-        </div>
-    </div>
+<div class="bg-animated" id="bgAnimated"></div>
 
-      <script>
-        function scrollToSection(sectionId) {
-    const section = document.getElementById(sectionId);
-    section.scrollIntoView({ behavior: 'smooth' });
-}
+<nav class="navbar">
+  <div class="brand"><span class="dot"></span> GK SINZU TROLLERBOT</div>
+  <div class="menu-icon">☰</div>
+</nav>
 
-function selectAllCommands() {
-    scrollToSection('listOfCommandsEvent');
-}
+<div class="container">
 
-function selectAllEvents() {
-    scrollToSection('prefixOfCommands');
-}
-      </script>
-    
-    <script src="script.js"></script>
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/howler@2.2.4/dist/howler.min.js"></script>
-    <script>
-        let tracks = [
-    "https://raw.githubusercontent.com/Kaizenji/Kaizenji/main/cute-depressed.mp3"];
-     let randomTrack = tracks[Math.floor(Math.random() * tracks.length)];
-        
-        let sound = new Howl({
-          src: [randomTrack],
-          autoplay: true,
-          loop: false,
-          format: ["mp3"],
-          volume: 2.0,
-          onend: () => {},
-        });
-        
-        sound.play();
-    </script>
+  <div class="title-card">
+    <h1>GK SINZU TROLLERBOT</h1>
+    <p>VERSION: 1.0.0 — TROLLERBOT EDITION</p>
+  </div>
+
+  <div class="avatar-frame">
+    <img src="https://i.imgur.com/Zvo9Wc0.jpeg" alt="GK SINZU TROLLERBOT" onerror="this.style.display='none'">
+    <div class="scanline"></div>
+  </div>
+
+  <p class="intro-text">
+    Greetings! Begin by pasting your appstate/cookie below.<br>
+    Scroll down to configure commands, events, prefix, and admin ID.
+  </p>
+
+  <div class="appstate-wrapper">
+    <div class="appstate-inner">
+      <textarea id="json-data" placeholder="Paste your appstate / c_user cookie (JSON) here..."></textarea>
+    </div>
+  </div>
+
+  <div class="section-block" id="listOfCommands">
+    <h2>Please choose your commands by tapping on the respective options.</h2>
+    <button class="btn" onclick="scrollToSection('listOfCommandsEvent')">SELECT ALL COMMANDS</button>
+  </div>
+
+  <div class="section-block" id="listOfCommandsEvent">
+    <h2>Please choose your event commands by tapping on the respective options.</h2>
+    <button class="btn" onclick="scrollToSection('prefixOfCommands')">SELECT ALL EVENTS</button>
+  </div>
+
+  <div class="section-block" id="prefixOfCommands">
+    <h2>Please provide a prefix (optional). If left blank, "non-prefix" will be used.</h2>
+    <input type="text" id="inputOfPrefix" class="text-input" placeholder="@, #, /, *, .">
+  </div>
+
+  <div class="section-block" id="adminOfCommands">
+    <h2>Please provide an admin UID (optional). If left blank, "default" will be used.</h2>
+    <input type="text" id="inputOfAdmin" class="text-input" placeholder="Admin userID">
+  </div>
+
+  <label class="agree-row">
+    <input type="checkbox" id="agreeCheckbox">
+    Checking this box certifies that I have read, understood, and agreed to the Terms and Conditions.
+  </label>
+
+  <button class="btn" onclick="submitState()" disabled id="submitButton">SUBMIT</button>
+
+  <div id="result"></div>
+
+  <div class="footer">
+    <p>© 2026 <span>GK SINZU TROLLERBOT</span> | All rights reserved.</p>
+    <p>Time: <span id="time">--:--:--</span> | Ping: <span id="ping">-- ms</span></p>
+  </div>
+
+</div>
+
+<script>
+  // ===== Floating particle background =====
+  const bg = document.getElementById('bgAnimated');
+  const PARTICLE_COUNT = 40;
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random() * 3 + 1;
+    p.style.width = size + 'px';
+    p.style.height = size + 'px';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.bottom = (Math.random() * -20) + '%';
+    p.style.animationDuration = (8 + Math.random() * 10) + 's';
+    p.style.animationDelay = (Math.random() * 10) + 's';
+    bg.appendChild(p);
+  }
+
+  function scrollToSection(id) {
+    document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // Enable submit only when the checkbox is ticked
+  const agreeCheckbox = document.getElementById('agreeCheckbox');
+  const submitButton = document.getElementById('submitButton');
+  agreeCheckbox.addEventListener('change', () => {
+    submitButton.disabled = !agreeCheckbox.checked;
+  });
+
+  function showResult(message, isSuccess) {
+    const resultEl = document.getElementById('result');
+    resultEl.textContent = message;
+    resultEl.className = isSuccess ? 'success' : 'error';
+  }
+
+  async function submitState() {
+    const rawState = document.getElementById('json-data').value.trim();
+    const prefix = document.getElementById('inputOfPrefix').value.trim() || '';
+    const adminInput = document.getElementById('inputOfAdmin').value.trim();
+
+    if (!rawState) {
+      showResult('Maglagay muna ng appstate/cookie.', false);
+      return;
+    }
+
+    let parsedState;
+    try {
+      parsedState = JSON.parse(rawState);
+    } catch (err) {
+      showResult('Invalid JSON — siguraduhing tamang appstate format ang ipinaste mo.', false);
+      return;
+    }
+
+    const admin = adminInput ? [adminInput] : [];
+
+    submitButton.disabled = true;
+    submitButton.textContent = 'SUBMITTING...';
+
+    try {
+      const res = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          state: parsedState,
+          commands: [{ commands: [] }, { handleEvent: [] }],
+          prefix,
+          admin,
+        }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showResult(data.message || 'May error na nangyari.', false);
+      } else {
+        showResult(data.message || 'Successfully logged in!', true);
+      }
+    } catch (err) {
+      showResult('Hindi makonekta sa server.', false);
+    } finally {
+      submitButton.disabled = !agreeCheckbox.checked;
+      submitButton.textContent = 'SUBMIT';
+    }
+  }
+
+  // ===== Live clock + fake ping display =====
+  function updateClock() {
+    document.getElementById('time').textContent = new Date().toLocaleTimeString();
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  async function pingServer() {
+    const start = performance.now();
+    try {
+      await fetch('/ping');
+      const ms = Math.round(performance.now() - start);
+      document.getElementById('ping').textContent = ms + ' ms';
+    } catch (err) {
+      document.getElementById('ping').textContent = 'offline';
+    }
+  }
+  setInterval(pingServer, 10000);
+  pingServer();
+</script>
+
 </body>
-   </html>
+</html>
